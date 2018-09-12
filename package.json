@@ -1,7 +1,7 @@
 {
   "name": "grant-hunt",
   "version": "1.0.0",
-  "description": "",
+  "description": "Multiplayer card game",
   "main": "index.js",
   "scripts": {
     "start": "pm2 start app.js",
