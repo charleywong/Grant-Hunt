@@ -2,7 +2,8 @@
 
 ## How to run:
 1. pull
-2. npm start
+2. npm install
+3. npm start
 
 ## How to stop:
 1. npm stop
