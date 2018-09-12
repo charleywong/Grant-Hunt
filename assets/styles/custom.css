@@ -1,0 +1,23 @@
+/* S T Y L E */
+html,body {
+	height: 100%
+
+}
+
+.navbar {
+    margin-bottom: 0px;
+    background-color: transparent;
+    border-bottom: 3px solid #14151A
+    
+}
+
+.masthead {
+	color:#fff;
+	padding: 10%;
+	position: relative;
+	width: 100%;
+	height: 100vh;
+	min-height: 35rem;
+	background-color: #1B2344;
+
+}
