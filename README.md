@@ -2,7 +2,8 @@
 
 ## How to run:
 1. pull
-> Note you need to have installed node (v10.10.0) and npm (v6.4.1)
+> Note you need to have installed node and npm 
+> (I'm running latest versions of both)
 2. npm install
 3. npm start
 
