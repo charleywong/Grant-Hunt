@@ -18,9 +18,12 @@
         <div class="container my-auto">
             <div class="row">
                 <div class="col-lg-8 mx-auto">
-                    <p id="status" class="text-faded mb-5">
-                    
-                    </p>
+                    <p id="status" class="text-faded mb-5"></p>
+                    <p id="waitingstatus" class="text-faded mb-5"></p>
+                   		<div id="gamewindow" action="" style="visibility: hidden">
+     						<p id="turnstatus" class="text-faded mb-5"></p>
+     						<button id="playbutton"">End Turn</button>
+    					<div>
                 </div>
                 
             </div>
@@ -31,10 +34,38 @@
 	<script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io('/play');
+        
         socket.on('update', function(data){
-        	console.log(data);
         	document.getElementById("status").innerHTML = data + ' User(s) connected';
         });
+        
+        socket.on('player update', function(data){
+        	if(data > 0) {
+            	document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players.";
+             } else {
+            	document.getElementById("waitingstatus").innerHTML = "The game has started!";
+            }
+        });
+        
+        socket.on('nonplayer update', function(data){
+            document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
+        });
+        
+        socket.on('start game', function(){
+        	document.getElementById("waitingstatus").innerHTML = "The game has started!";
+        	document.getElementById("gamewindow").style.visibility = "visible";
+        	document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
+        	document.getElementById("playbutton").onclick = function(){
+        		document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
+        		socket.emit('end turn');
+      			return false;
+        	};
+        });
+        
+        socket.on('your turn', function(){
+        	document.getElementById("turnstatus").innerHTML = "It's your turn!";
+        });
+        
     </script>
     </body>
 </html>
