@@ -31,10 +31,12 @@ function startGame(){
   //every player draws one card
   while(i < game.players.length){
     var card = game.deck.pop;
-    playerhands[i].push(c);
+    game.playerhands[i] = [card];
     play.to(game.players[i]).emit('start game', card);
   }
-  play.to(game.players[0]).emit('your turn', game.currentPlayer);
+  //draw a card for player 0
+  var newCard = game.deck.pop;
+  play.to(game.players[0]).emit('your turn', game.currentPlayer, newCard);
   console.log("New game started. It is player 0's turn. SocketID: " + game.players[0]);
 }
 
@@ -100,13 +102,17 @@ play.on('connection', function(socket){
     play.emit('update', usercount);
   });
   
-  socket.on('end turn', function(){
-  	console.log("End turn request coming from socketID: " + socket.id);
+  socket.on('play card', function(card){
+  	//remove that card from the players hand
+    var index = game.playerhands[game.currentPlayer].indexOf(card);
+    game.players.splice(index, 1);
+    
+    //move on to the next player
     game.currentPlayer = (game.currentPlayer + 1) % 4;
-    //draw a card
-    var card = game.deck.pop();
-    play.to(game.players[game.currentPlayer]).emit('your turn', game.currentPlayer, card);
-    console.log("It is now player " + game.currentPlayer + "'s turn. socketID: " + game.players[game.currentPlayer]);
+    
+    //player draws a card
+    var newCard = game.deck.pop();
+    play.to(game.players[game.currentPlayer]).emit('your turn', game.currentPlayer, newCard);
   });
 });
 
