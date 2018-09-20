@@ -20,12 +20,18 @@ h1, h2, h3, h4, h5, h6 {
     color:white;
 }
 
+
 .navbar > ul > li, .navbar > ul > li > a  {
 	list-style-type: none;
 	color: white;
 	display:inline;
 	/*padding-left:10%;*/
 }
+
+.navbar >ul > li {
+	margin: 10px
+}
+
 
 .home-banner {
 	color:#fff;
