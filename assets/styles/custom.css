@@ -21,18 +21,21 @@ h1, h2, h3, h4, h5, h6 {
     color:white;
 }
 
-
 .navbar > ul > li, .navbar > ul > li > a  {
 	list-style-type: none;
 	color: white;
 	display:inline;
 
 }
-
-.navbar >ul > li {
-	margin-left: 10px;
+.navbar > ul {
+	margin-top: 10px	
 }
-
+.navbar > ul > li {
+	margin: 10px;
+}
+.navbar > ul > li > a {
+	margin-top: 5px;
+}
 
 .home-banner {
 	color:#fff;
