@@ -25,23 +25,25 @@ var deck = [1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8];
 var game = { players: [], playerhands: [], currentPlayer: 0, deck: deck};
 
 function startGame(){
+  console.log("Starting game.");
   var i = 0;
   //shuffle the deck
   game.deck = newDeck();
   //every player draws one card
   while(i < game.players.length){
-    var card = game.deck.pop;
+    var card = game.deck.pop();
     game.playerhands[i] = [card];
     play.to(game.players[i]).emit('start game', card);
+    i++;
   }
   //draw a card for player 0
-  var newCard = game.deck.pop;
+  var newCard = game.deck.pop();
   play.to(game.players[0]).emit('your turn', game.currentPlayer, newCard);
   console.log("New game started. It is player 0's turn. SocketID: " + game.players[0]);
 }
 
 function shuffle(deck){
-  var currIndex = array.length;
+  var currIndex = deck.length;
   var temp;
   var r;
   while (0 !== currIndex){
@@ -76,15 +78,19 @@ play.on('connection', function(socket){
   
   //if there's less than 4 players, they're added to the player room
   //otherwise they're added to the non player room
+  console.log("A user has joined.");
   if(game.players.length < 4){
+    console.log("Player added to players group.");
   	game.players.push(socket.id);
   	socket.join('players');
   	if(game.players.length == 4){
   	  startGame();
+  	  
   	} else {
   	  play.to('players').emit('player update', 4 - usercount);
   	}
   } else {
+    console.log("Player added to nonplayers group.");
   	socket.join('nonplayers');
   	play.to('nonplayers').emit('nonplayer update', usercount - 4);
   }
@@ -102,10 +108,10 @@ play.on('connection', function(socket){
     play.emit('update', usercount);
   });
   
-  socket.on('play card', function(card){
+  socket.on('end turn', function(){
   	//remove that card from the players hand
-    var index = game.playerhands[game.currentPlayer].indexOf(card);
-    game.players.splice(index, 1);
+    //var index = game.playerhands[game.currentPlayer].indexOf(card);
+    //game.players.splice(index, 1);
     
     //move on to the next player
     game.currentPlayer = (game.currentPlayer + 1) % 4;
