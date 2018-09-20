@@ -7,14 +7,56 @@ var play = io.of('/play');
 var usercount = 0;
 
 
+/**
+Card list:
+1: Guard		Built Environment		(5 copies)
+2: Priest		Arts					(2 copies)
+3: Baron		Law						(2 copies)
+4: Handmaiden	Medicine				(2 copies)
+5: Prince		Science					(2 copies)
+6: King			Engineering				(1 copy)
+7: Countess		Business				(1 copy)
+8: Princess		UNSW					(1 copy)
+**/
+var deck = [1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8];
+
+
 //keeps track of current running game
-var game = { players: [], running: false, currentPlayer: 0 };
+var game = { players: [], playerhands: [], currentPlayer: 0, deck: deck};
 
 function startGame(){
-	game.running  = true;
-	play.to('players').emit('start game');
-	play.to(game.players[0]).emit('your turn', game.currentPlayer);
-	console.log("New game started. It is player 0's turn. SocketID: " + game.players[0]);
+  var i = 0;
+  //shuffle the deck
+  game.deck = newDeck();
+  //every player draws one card
+  while(i < game.players.length){
+    var card = game.deck.pop;
+    game.playerhands[i] = [card];
+    play.to(game.players[i]).emit('start game', card);
+  }
+  //draw a card for player 0
+  var newCard = game.deck.pop;
+  play.to(game.players[0]).emit('your turn', game.currentPlayer, newCard);
+  console.log("New game started. It is player 0's turn. SocketID: " + game.players[0]);
+}
+
+function shuffle(deck){
+  var currIndex = array.length;
+  var temp;
+  var r;
+  while (0 !== currIndex){
+    r = Math.floor(Math.random() * currIndex);
+    currIndex--;	  
+	
+	temp = deck[r];
+	deck[r] = deck[currIndex];
+	deck[currIndex] = temp;
+  }
+  return deck;
+}
+
+function newDeck(){
+	return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
 
@@ -68,11 +110,17 @@ play.on('connection', function(socket){
     play.emit('update', usercount);
   });
   
-  socket.on('end turn', function(){
-  	console.log("End turn request coming from socketID: " + socket.id);
+  socket.on('play card', function(card){
+  	//remove that card from the players hand
+    var index = game.playerhands[game.currentPlayer].indexOf(card);
+    game.players.splice(index, 1);
+    
+    //move on to the next player
     game.currentPlayer = (game.currentPlayer + 1) % 4;
-    play.to(game.players[game.currentPlayer]).emit('your turn', game.currentPlayer);
-    console.log("It is now player " + game.currentPlayer + "'s turn. socketID: " + game.players[game.currentPlayer]);
+    
+    //player draws a card
+    var newCard = game.deck.pop();
+    play.to(game.players[game.currentPlayer]).emit('your turn', game.currentPlayer, newCard);
   });
 });
 

@@ -58,7 +58,7 @@
             document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
         });
         
-        socket.on('start game', function(){
+        socket.on('start game', function(card){
         	document.getElementById("waitingstatus").innerHTML = "The game has started!";
         	document.getElementById("gamewindow").style.visibility = "visible";
         	document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
@@ -69,7 +69,7 @@
         	};
         });
         
-        socket.on('your turn', function(){
+        socket.on('your turn', function(currentPlayer, card){
         	document.getElementById("turnstatus").innerHTML = "It's your turn!";
         });
         
