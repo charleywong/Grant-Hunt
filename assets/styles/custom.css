@@ -1,23 +1,84 @@
 /* S T Y L E */
-html,body {
-	height: 100%
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,900');
 
+html,body {
+	height: 100%;
+	font-family: 'Source Sans Pro', sans-serif;
+	letter-spacing: 0.5px;
+	font-size: 15;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-family: 'Source Sans Pro', sans-serif;
+	font-weight: 900;
+	letter-spacing: 2px;
 }
 
 .navbar {
     margin-bottom: 0px;
-    background-color: transparent;
-    border-bottom: 3px solid #14151A
-    
+    background-color: #2e2f40;
+    color:white;
 }
 
-.masthead {
+.navbar > ul > li, .navbar > ul > li > a  {
+	list-style-type: none;
+	color: white;
+	display:inline;
+	/*padding-left:10%;*/
+}
+
+.home-banner {
 	color:#fff;
 	padding: 10%;
-	position: relative;
+	padding-top:15%;
 	width: 100%;
-	height: 100vh;
-	min-height: 35rem;
-	background-color: #1B2344;
+	height:100%;
+	position:fixed;
+	background-size: 100%;
+	background-repeat: no-repeat;
+	background-image: url("../images/background.png");
+}
 
+.section-gap {
+  	padding: 100px 0;
+}
+
+.description-banner {
+	height: 250px;
+	color: white;
+	padding-top:10%;
+	padding-left: 10%;
+	position: relative;
+	background-size: 95%;
+	background-image: url("../images/background.png");
+}
+
+.description {
+	padding-left: 10%;
+	padding-right: 10%;
+	color:black;
+}
+
+.clearfix {
+  clear: both;
+}
+
+.button {
+	border: 2px solid white;
+    color: white;
+    padding: 14px 28px;
+    font-size: 16px;
+    cursor: pointer;
+	border-radius: 30px;
+	opacity:0.7;
+}
+
+.button:hover {
+	border: 2px solid white;
+    color: #04e762;
+    padding: 14px 28px;
+    font-size: 16px;
+    cursor: pointer;
+	border-radius: 30px;
+	opacity:1;
 }
