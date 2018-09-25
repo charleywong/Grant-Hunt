@@ -21,6 +21,12 @@ Card list:
 var deck = [1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8];
 var display_deck = {1:5, 2:2, 3:2, 4:2, 5:2, 6:1, 7:1, 8:1};
 
+/**
+display_deck keeps track of unseen cards
+when a player is knocked out of a round, playerhand[player_id] is set to 0
+when the deck is empty, end_game function sets playerhand value for each player to 0 for the losers, and 1 for the winners
+when there is only one player left, the playerhands values are changed to be 0 for the losers and 1 for the winner
+**/
 
 //keeps track of current running game
 var game =  { players: [], 
@@ -146,6 +152,14 @@ function play_log(id) {
   return temp;
 }
 
+function get_hand(id) {
+  return game.playerhands[id];
+}
+
+function start_turn(id) {
+  game.playerhands[id].push(game.deck.pop());
+}
+
 function played_card(id, card) {
   if ((game.playerhands[id].includes(5) || game.playerhands[id].includes(6)) && game.playerhands[id].includes(7)) {
     if (card == 7) return 0;
@@ -160,6 +174,7 @@ function played_card(id, card) {
     //error
   }
 
+  var return_val;
   game.display_deck[card]--;
   game.last_played[id] = card;
   if (card == 1 | card == 2 | card == 3 | card == 6) {
@@ -167,16 +182,20 @@ function played_card(id, card) {
   } else if (card == 5) {
     return 5;//prompt to display all players including yourself
   } else if (card == 8) {
-    game.playerhands[id] = [];
-    return 8; //player is knocked out
+    game.playerhands[id] = 0;
+    return_val = 8; //player is knocked out
   } else {
-    return 0; //no additional prompts
+    return_val = 0; //no additional prompts
+  }
+
+  if (game.deck.length == 0) {
+    return -1;
   }
 }
 
 function selected_player(id, player, card) {
   if (game.last_played[player] == 4) {
-    return -1; //played handmaid last, can't be targeted
+    return 0; //played handmaid last, can't be targeted
   }
 
   if (card == 1) {
@@ -186,9 +205,22 @@ function selected_player(id, player, card) {
   } else if (card == 3) {
     if (game.playerhands[id][0] < game.playerhands[player][0]) {
       game.display_deck[game.playerhands[id][0]]--;
+      game.playerhands[id] = 0;
+      if (game.deck.length == 0) {
+        end_game();
+      }
+      //need to notify front end that player is knocked out and that the game is over
       return 8; //current player is knocked out
     } else if (game.playerhands[id][0] > game.playerhands[player][0]) {
       game.display_deck[game.playerhands[player][0]]--;
+      game.playerhands[player] = 0;
+
+
+
+      if (game.deck.length == 0) {
+        end_game();
+      }
+      //need to notify front end that player is knocked out and that the game is over
       return -8; //other player is knocked out
     } else {
       //nothing happens
@@ -204,9 +236,60 @@ function selected_player(id, player, card) {
 }
 
 function guessed_card (id, player, card) {
+  if (game.deck.length == 0) {
+    end_game();
+  }
+  //need to notify front end if player is knocked out and that the game is over somehow!!!  
+
+
   if (card == game.playerhands[player][0]) {
     game.display_deck[card]--;
+    game.playerhands[player] = 0;
     return -8; //other player is knocked out
   }
   return 0;
+}
+
+function end_game() {
+  var largest_id = [];
+  var largest_card = 0;
+  for (var i = 0; i < 4; i++) {
+    if (game.playerhands[i] != 0) {
+      if (game.playerhands[i][0] == largest_card) {
+        largest_id.push(i);
+      } else if (game.playerhands[i][0] > largest_card) {
+        largest_card = game.playerhands[i][0];
+        largest_id = [i];
+      }
+    }
+  }
+  for (var i = 0; i < 4; i++) {
+    if (largest_id.includes(i)) {
+      game.playerhands[i] = 1;
+    } else {
+      game.playerhands[i] = 0;
+    }
+  }
+}
+
+//returns true if there are at least 2 players remaining, otherwise returns false and sets the winner using playerhands
+function remaining_players() {
+  var flag = false;
+  var id = -1;
+  for (var i = 0; i < 4; i++) {
+    if (game.playerhands[i] != 0) {
+      id = i;
+      if (flag) return true;
+      flag = true;
+    }
+  }
+  
+  for (var i = 0; i < 4; i++) {
+    if (i == id) {
+      game.playerhands[i] = 1;
+    } else {
+      game.playerhands[i] = 0;
+    }
+  }
+  return false;
 }
