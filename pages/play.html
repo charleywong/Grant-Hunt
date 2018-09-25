@@ -9,8 +9,6 @@
         <script src="/socket.io/socket.io.js"></script>
         <script>
             var socket = io('/play');
-            
-
 
             socket.on('update', function(data){
                 document.getElementById("status").innerHTML = data + ' User(s) connected';
@@ -43,16 +41,22 @@
                 document.getElementById("turnstatus").innerHTML = "It's your turn!";
             });
             
-            document.getElementById("share-link").onclick = function(){
-                var textArea = document.createElement("textarea")
+            // document.getElementById("share-link").onclick = function(){
+            //     var textArea = document.createElement("textarea")
             
-                textArea.value = location.href
-                document.body.appendChild(textArea)
-                textArea.select();
-                document.execCommand('Copy');
+            //     textArea.value = location.href
+            //     document.body.appendChild(textArea)
+            //     textArea.select();
+            //     document.execCommand('Copy');
 
-                document.body.removeChild(textArea)
-            };
+            //     document.body.removeChild(textArea)
+            // };
+            function copyToClipboard(){
+                var copyText = document.getElementById('copy');
+                copyText.select();
+                document.execCommand("copy");
+                alert(copyText.value);
+            }
         </script>
     </head>
     <body>
@@ -81,7 +85,8 @@
             </div>
             <!-- button i want to fixxx -->
             <div class="row">
-                <div class='row'><a class='button' id='share-link' href='play'>Play</a></div>
+                <input class="text" id="copy" value="test" readonly/>
+                <button class='copy-btn' onclick="copyToClipboard()">Play</a>
             </div>
         </div>
     </header>
