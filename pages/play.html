@@ -5,6 +5,55 @@
         <link rel="stylesheet" type="text/css" href="/styles/custom.css">
         <title>Grant Hunt</title>
 
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var socket = io('/play');
+            
+
+
+            socket.on('update', function(data){
+                document.getElementById("status").innerHTML = data + ' User(s) connected';
+            });
+            
+            socket.on('player update', function(data){
+                if(data > 0) {
+                    document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players.";
+                 } else {
+                    document.getElementById("waitingstatus").innerHTML = "The game has started!";
+                }
+            });
+            
+            socket.on('nonplayer update', function(data){
+                document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
+            });
+            
+            socket.on('start game', function(card){
+                document.getElementById("waitingstatus").innerHTML = "The game has started!";
+                document.getElementById("gamewindow").style.visibility = "visible";
+                document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
+                document.getElementById("playbutton").onclick = function(){
+                    document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
+                    socket.emit('end turn');
+                    return false;
+                };
+            });
+            
+            socket.on('your turn', function(currentPlayer, card){
+                document.getElementById("turnstatus").innerHTML = "It's your turn!";
+            });
+            
+            document.getElementById("share-link").onclick = function(){
+                var textArea = document.createElement("textarea")
+            
+                textArea.value = location.href
+                document.body.appendChild(textArea)
+                textArea.select();
+                document.execCommand('Copy');
+
+                document.body.removeChild(textArea)
+            };
+        </script>
     </head>
     <body>
         
@@ -12,7 +61,7 @@
         <a class="navbar-left" href="">
             <img src="/images/logo.png" width="200" alt="">
             <ul>
-                <!-- <li><a href="play">Play</a></li> -->
+                <li><a href="play">Play</a></li>
                 <li><a href="rules">Rules</a></li>
             </ul>
         </a>
@@ -20,59 +69,22 @@
 
     <header class="home-banner text-center text-black d-flex">
         <div class="container my-auto">
-            <!-- <div class="row">
-                <div class="col-lg-5 mx-auto">
-                    <img style="height:50%" src="../images/cards.png"/>
-                <hr>
-                </div>
-                <div class="col-lg-7 mx-auto">
-                    <h1 class="text-uppercase">
-                        <strong>Grant Hunt</strong>
-                    </h1>
-                    <p class="text-faded mb-5">Deceive your mates. Collect some Grants. Become rich.</p>
-                    <a class="button" href="play">Play</a>
-                    <a class="button" href="rules">Rules</a>
-                </div>
-            </div> -->
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <p id="status" class="text-faded mb-5"></p>
+                    <p id="waitingstatus" class="text-faded mb-5"></p>
+                        <div id="gamewindow" action="" style="visibility: hidden">
+                            <p id="turnstatus" class="text-faded mb-5"></p>
+                            <button id="playbutton"">End Turn</button>
+                        </div>
+                </div>  
+            </div>
+            <!-- button i want to fixxx -->
+            <div class="row">
+                <div class='row'><a class='button' id='share-link' href='play'>Play</a></div>
+            </div>
         </div>
     </header>
-	
-	
-	<script src="/socket.io/socket.io.js"></script>
-    <script>
-        var socket = io('/play');
-        
-        socket.on('update', function(data){
-        	document.getElementById("status").innerHTML = data + ' User(s) connected';
-        });
-        
-        socket.on('player update', function(data){
-        	if(data > 0) {
-            	document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players.";
-             } else {
-            	document.getElementById("waitingstatus").innerHTML = "The game has started!";
-            }
-        });
-        
-        socket.on('nonplayer update', function(data){
-            document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
-        });
-        
-        socket.on('start game', function(card){
-        	document.getElementById("waitingstatus").innerHTML = "The game has started!";
-        	document.getElementById("gamewindow").style.visibility = "visible";
-        	document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
-        	document.getElementById("playbutton").onclick = function(){
-        		document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
-        		socket.emit('end turn');
-      			return false;
-        	};
-        });
-        
-        socket.on('your turn', function(currentPlayer, card){
-        	document.getElementById("turnstatus").innerHTML = "It's your turn!";
-        });
-        
-    </script>
+    
     </body>
 </html>
