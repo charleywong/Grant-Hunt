@@ -19,10 +19,17 @@ Card list:
 8: Princess		UNSW					(1 copy)
 **/
 var deck = [1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8];
+var display_deck = {1:5, 2:2, 3:2, 4:2, 5:2, 6:1, 7:1, 8:1};
 
 
 //keeps track of current running game
-var game = { players: [], playerhands: [], currentPlayer: 0, deck: deck};
+var game =  { players: [], 
+              playerhands: [],
+              currentPlayer: 0,
+              deck: deck,
+              display_deck: display_deck,
+              last_played: []
+            };
 
 function startGame(){
   console.log("Starting game.");
@@ -33,6 +40,7 @@ function startGame(){
   while(i < game.players.length){
     var card = game.deck.pop();
     game.playerhands[i] = [card];
+    game.last_played.push(0);
     play.to(game.players[i]).emit('start game', card);
     i++;
   }
@@ -125,3 +133,80 @@ play.on('connection', function(socket){
 http.listen(3000, function(){
   console.log('listening on *:3000');
 });
+
+function remaining_cards() {
+  return game.display_deck;
+}
+
+function play_log(id) {
+  var temp = [];
+  for (var i = id+1; i - id < 4; i++) {
+    temp.push(game.last_played[i%4]);
+  }
+  return temp;
+}
+
+function played_card(id, card) {
+  if ((game.playerhands[id].includes(5) || game.playerhands[id].includes(6)) && game.playerhands[id].includes(7)) {
+    if (card == 7) return 0;
+    else return 7;//player must discard countess
+  }
+
+  if (game.playerhands[id][0] == card) {
+    game.playerhands[id] = [game.playerhands[id][1]];
+  } else if (game.playerhands[id][1] == card) {
+    game.playerhands[id] = [game.playerhands[id][0]];
+  } else {
+    //error
+  }
+
+  game.display_deck[card]--;
+  game.last_played[id] = card;
+  if (card == 1 | card == 2 | card == 3 | card == 6) {
+    return 1;//indicator that prompt to select ANOTHER player should be displayed
+  } else if (card == 5) {
+    return 5;//prompt to display all players including yourself
+  } else if (card == 8) {
+    game.playerhands[id] = [];
+    return 8; //player is knocked out
+  } else {
+    return 0; //no additional prompts
+  }
+}
+
+function selected_player(id, player, card) {
+  if (game.last_played[player] == 4) {
+    return -1; //played handmaid last, can't be targeted
+  }
+
+  if (card == 1) {
+    return 1; //dispay card list to pick from
+  } else if (card == 2) {
+    return game.playerhands[player][0]; //id of card to display to current player
+  } else if (card == 3) {
+    if (game.playerhands[id][0] < game.playerhands[player][0]) {
+      game.display_deck[game.playerhands[id][0]]--;
+      return 8; //current player is knocked out
+    } else if (game.playerhands[id][0] > game.playerhands[player][0]) {
+      game.display_deck[game.playerhands[player][0]]--;
+      return -8; //other player is knocked out
+    } else {
+      //nothing happens
+    }
+  } else if (card == 5) {
+    game.display_deck[game.playerhands[player][0]]--;
+    game.playerhands[player] = [game.deck.pop()];
+  } else if (card == 6) {
+    var temp = game.playerhands[id];
+    game.playerhands[id] = game.playerhands[player];
+    game.playerhands[player] = temp;
+  }
+}
+
+function guessed_card (id, player, card) {
+  if (card == game.playerhands[player][0]) {
+    game.display_deck[card]--;
+    return -8; //other player is knocked out
+  }
+  return 0;
+}
