@@ -14,9 +14,9 @@
             
             socket.on('player update', function(data){
                 if(data > 0) {
-                    document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players.";
-                    document.getElementById("copy").style.visibility = "visible";
-                    document.getElementById("copy-btn").style.visibility = "visible";
+                    document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players";
+                    // document.getElementById("copy").style.visibility = "visible";
+                    document.getElementById("share-link").style.visibility = "visible";
                 } else {
                     document.getElementById("waitingstatus").innerHTML = "The game has started!";
                 }
@@ -41,11 +41,22 @@
                 document.getElementById("turnstatus").innerHTML = "It's your turn!";
             });
             
-            function copyToClipboard(){
-                var copyText = document.getElementById('copy');
-                copyText.select();
-                document.execCommand("copy");
-                alert(copyText.value);
+            // function copyToClipboard(){
+            //     var copyText = document.getElementById('copy');
+            //     copyText.select();
+            //     document.execCommand("copy");
+            //     // alert(copyText.value);
+            // }
+
+            function copyToClipboard() {
+                var textArea = document.createElement("textarea")
+            
+                textArea.value = window.location.href
+                document.body.appendChild(textArea)
+                textArea.select();
+                document.execCommand('Copy');
+
+                document.body.removeChild(textArea)
             }
         </script>
     </head>
@@ -55,8 +66,9 @@
         <a class="navbar-left" href="/">
             <img src="/images/logo.png" width="200" alt="">
             <ul>
-                <li><a href="play">Play</a></li>
+                <!-- <li><a href="play">Play</a></li> -->
                 <li><a href="rules">Rules</a></li>
+                <li><a href="/"  style="color: red">Leave Game</a></li>
             </ul>
         </a>
     </nav>
@@ -66,15 +78,28 @@
             <div class="row">
                 <div class="col-lg-12 mx-auto">
                     <p id="status" class="text-faded mb-5"></p>
-                    <p id="waitingstatus" class="text-faded mb-5"></p>
+                    <p id="waitingstatus" class="text-faded mb-5 loading"></p>
                         <div id="gamewindow" action="" style="visibility: hidden">
                             <p id="turnstatus" class="text-faded mb-5"></p>
                             <button id="playbutton"">End Turn</button>
                         </div>
                 </div>  
-                <input class="text" id="copy" value="test" style="visibility: hidden" readonly/>
-                <button class='copy-btn' id="copy-btn" style="visibility: hidden" onclick="copyToClipboard()">Play</a>
             </div>
+            <!-- option 1 -->
+            <div class='row'>
+                <div class="col-lg-12 mx-auto">
+                    <!-- <button class="copy-btn" id="share-link" onclick="copyToClipboard()" style="visibility: hidden;">Click to copy shareable 
+                    link!</button> -->
+                    <a class="button" id="share-link" onclick="copyToClipboard()" style="visibility: hidden;">Click to copy shareable link!</a>
+                </div>
+            </div>
+            <!-- option 2 -->
+            <!-- <div class="row">
+                <div class="col-lg-12 mx-auto">
+                    <input class="text" id="copy" value="test" style="visibility: hidden" readonly/>
+                    <button class='copy-btn' id="share-link" style="visibility: hidden" onclick="copyToClipboard()">Copy</button>
+                </div>
+            </div> -->
         </div>
     </header>
     
