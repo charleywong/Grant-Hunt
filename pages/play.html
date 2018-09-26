@@ -63,6 +63,9 @@
 
                 document.body.removeChild(textArea)
             }
+            window.onbeforeunload = function() {
+                return "";
+            };
         </script>
     </head>
     <body>
@@ -73,7 +76,7 @@
             <ul>
                 <!-- <li><a href="play">Play</a></li> -->
                 <li><a href="rules">Rules</a></li>
-                <li><a href="/"  style="color: red">Leave Game</a></li>
+                <li><a href="/" style="color: #ff9300" onclick="confirmLeave()">Leave Game</a></li>
             </ul>
         </a>
     </nav>
