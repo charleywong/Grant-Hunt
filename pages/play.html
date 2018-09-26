@@ -27,6 +27,11 @@
             });
             
             socket.on('start game', function(card){
+                // hide share link button
+                document.getElementById("share-link").style.visibility = "hidden"
+                // get rid of loading dots
+                document.getElementById("waitingstatus").classList.remove("loading")
+
                 document.getElementById("waitingstatus").innerHTML = "The game has started!";
                 document.getElementById("gamewindow").style.visibility = "visible";
                 document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
