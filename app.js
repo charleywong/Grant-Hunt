@@ -116,7 +116,7 @@ function cardInfo(cardID){
       card.name = "UNSW";
       card.description = "If you discard this card for any reason, you are eliminated from the round.";
       break;
-    case else:
+    default:
       card.name = "Unknown Card";
       card.description = "This card doesn't exist. You must have done something wrong.";
   }
