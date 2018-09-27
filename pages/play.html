@@ -48,6 +48,7 @@
                 // only show the end turn button if it's the current player's turn
                 var btn = document.createElement("button")
                 btn.appendChild(document.createTextNode("End Turn"))
+                btn.setAttribute("id","playbutton")
                 var gameWindow = document.getElementById("gamewindow")
                 gameWindow.appendChild(btn)
             });
