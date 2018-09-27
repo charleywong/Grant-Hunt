@@ -2,6 +2,7 @@ var express = require('express')
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var assert = require('assert');
 var play = io.of('/play');
 
 var usercount = 0;
@@ -90,28 +91,7 @@ play.on('connection', function(socket){
     play.emit('update', usercount);
   });
   
-  socket.on('play card', function(playedCard, otherCard){
-    var id = game.currentPlayer;
-  	//perform turn's action based on card
-  	//check next action based on card
-  	var result = played_card(id, playedCard, otherCard);
-  	//put other card into proper card slot
-  	if(result != 7 && result != 8){
-  	  game.playerHands[id] = otherCard;
-  	}
-  	//get player choice/whatever from front end
-  	
-  	
-  	//actually do the turn
-  	
-  	//move on to the next player
-  	id = (id + 1) % 4;
-    game.currentPlayer = id;
-    
-    //player draws a card
-    var newCard = game.deck.pop();
-    play.to(game.players[game.currentPlayer]).emit('your turn', id, cardInfo(game.playedhands[id]), cardInfo(newCard));
-  });
+  socket.on('play card', handleTurn(playedCard, otherCard));
 });
 
 http.listen(3000, function(){
@@ -126,7 +106,7 @@ function startGame(){
   //every player draws one card
   while(i < game.players.length){
     var card = game.deck.pop();
-    game.playerhands[i] = [card];
+    game.playerhands[i] = card;
     game.last_played.push(0);
     play.to(game.players[i]).emit('start game', card);
     i++;
@@ -156,51 +136,28 @@ function newDeck(){
 	return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
-function cardInfo(cardID){
-  var card = {name: "", strength: cardID, description: ""};
-  switch(cardID){
-    case 0:
-      card.name = "Empty";
-      card.description = "You don't have a card!"
-      break;
-	case 1:
-	  card.name = "Built Environment";
-	  card.description = "Choose a player and guess a card. If that player is holding that card, they discard it.";
-	  break;
-    case 2:
-      card.name = "Arts";
-      card.description = "Choose a player and view their hand.";
-      break;
-    case 3:
-      card.name = "Law";
-      card.description = "Choose a player and compare hands. The player with the lower strength hand discards their hand.";
-      break;
-    case 4:
-      card.name = "Medicine";
-      card.description = "You may not be affected by other cards until your next turn.";
-      break;
-    case 5:
-      card.name = "Science";
-      card.description = "Choose a player. They discard their hand and draw a new one.";
-      break;
-    case 6:
-      card.name = "Engineering";
-      card.description = "Choose a player. Trade hands with them.";
-      break;
-    case 7:
-      card.name = "Business";
-      card.description = "If you hold this card and either the Science or Engineering card, this card must be played immediately.";
-      break;
-    case 8:
-      card.name = "UNSW";
-      card.description = "If you discard this card for any reason, you are eliminated from the round.";
-      break;
-    default:
-      card.name = "Unknown Card";
-      card.description = "This card doesn't exist. You must have done something wrong.";
+function handleTurn(playedCard, otherCard){
+    var id = game.currentPlayer;
+  	//perform turn's action based on card
+  	//check next action based on card
+  	var result = played_card(id, playedCard, otherCard);
+  	//put other card into proper card slot
+  	if(result != 7 && result != 8){
+  	  game.playerHands[id] = otherCard;
+  	}
+  	//get player choice/whatever from front end
+  	
+  	
+  	//actually do the turn
+  	
+  	//move on to the next player
+  	id = (id + 1) % 4;
+    game.currentPlayer = id;
+    
+    //player draws a card
+    var newCard = game.deck.pop();
+    play.to(game.players[game.currentPlayer]).emit('your turn', id, cardInfo(game.playedhands[id]), cardInfo(newCard));
   }
-  return card;
-}
 
 function remaining_cards() {
   return game.display_deck;
@@ -325,6 +282,52 @@ function end_game() {
   }
 }
 
+function cardInfo(cardID){
+  var card = {name: "", strength: cardID, description: ""};
+  switch(cardID){
+    case 0:
+      card.name = "Empty";
+      card.description = "You don't have a card!"
+      break;
+	case 1:
+	  card.name = "Built Environment";
+	  card.description = "Choose a player and guess a card. If that player is holding that card, they discard it.";
+	  break;
+    case 2:
+      card.name = "Arts";
+      card.description = "Choose a player and view their hand.";
+      break;
+    case 3:
+      card.name = "Law";
+      card.description = "Choose a player and compare hands. The player with the lower strength hand discards their hand.";
+      break;
+    case 4:
+      card.name = "Medicine";
+      card.description = "You may not be affected by other cards until your next turn.";
+      break;
+    case 5:
+      card.name = "Science";
+      card.description = "Choose a player. They discard their hand and draw a new one.";
+      break;
+    case 6:
+      card.name = "Engineering";
+      card.description = "Choose a player. Trade hands with them.";
+      break;
+    case 7:
+      card.name = "Business";
+      card.description = "If you hold this card and either the Science or Engineering card, this card must be played immediately.";
+      break;
+    case 8:
+      card.name = "UNSW";
+      card.description = "If you discard this card for any reason, you are eliminated from the round.";
+      break;
+    default:
+      card.name = "Unknown Card";
+      card.description = "This card doesn't exist. You must have done something wrong.";
+  }
+  return card;
+}
+
 //returns true if there are at least 2 players remaining, otherwise returns false and sets the winner using playerhands
 function remaining_players() {
   var flag = false;
@@ -350,6 +353,11 @@ function remaining_players() {
 
 function run_tests(){
   console.log("Tests running...");
-  //put tests here
+  game.players = [0, 1, 2, 3] 		//populate player list with data to avoid issues
+  startGame();						//start game
+  
+  console.log(game);
+
+  
   console.log("Tests concluded.");
 }
