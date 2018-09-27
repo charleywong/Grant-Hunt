@@ -44,6 +44,12 @@
             
             socket.on('your turn', function(currentPlayer, card){
                 document.getElementById("turnstatus").innerHTML = "It's your turn!";
+
+                // only show the end turn button if it's the current player's turn
+                var btn = document.createElement("button")
+                btn.appendChild(document.createTextNode("End Turn"))
+                var gameWindow = document.getElementById("gamewindow")
+                gameWindow.appendChild(btn)
             });
             
             // function copyToClipboard(){
@@ -89,7 +95,7 @@
                     <p id="waitingstatus" class="text-faded mb-5 loading"></p>
                         <div id="gamewindow" action="" style="visibility: hidden">
                             <p id="turnstatus" class="text-faded mb-5"></p>
-                            <button id="playbutton"">End Turn</button>
+                            <!-- <button id="playbutton"">End Turn</button> -->
                         </div>
                 </div>  
             </div>
