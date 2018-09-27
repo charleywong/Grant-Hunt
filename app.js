@@ -91,7 +91,11 @@ play.on('connection', function(socket){
     play.emit('update', usercount);
   });
   
-  socket.on('play card', handleTurn(playedCard, otherCard));
+  socket.on('play card', turnPhaseOne(playedCard, otherCard));
+  
+  socket.on('play card', turnPhaseTwo(targetPlayer, playedCard));
+  
+  
 });
 
 http.listen(3000, function(){
@@ -133,31 +137,38 @@ function shuffle(deck){
 }
 
 function newDeck(){
-	return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
+  return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
-function handleTurn(playedCard, otherCard){
-    var id = game.currentPlayer;
-  	//perform turn's action based on card
-  	//check next action based on card
-  	var result = played_card(id, playedCard, otherCard);
-  	//put other card into proper card slot
-  	if(result != 7 && result != 8){
-  	  game.playerHands[id] = otherCard;
-  	}
-  	//get player choice/whatever from front end
+function turnPhaseOne(playedCard, otherCard){
+  var id = game.currentPlayer;
+  //perform turn's action based on card
+  //check next action based on card
+  var result = played_card(id, playedCard, otherCard);
+  //put other card into proper card slot
+  if(result != 7 && result != 8){
+    game.playerHands[id] = otherCard;
+  }
+  //decide which list of players to send
+  var playerList = [];
+  //send list of players to front end
+  play.to(game.players[game.currentPlayer]).emit('select player', playerList));
+}
   	
-  	
-  	//actually do the turn
-  	
-  	//move on to the next player
-  	id = (id + 1) % 4;
-    game.currentPlayer = id;
+ 
+  
+function turnPhaseTwo(targetPlayer, playedCard){
+  //actually do the turn
+  selected_player(game.players[game.currentPlayer], targetPlayer, playedCard);
+  //move on to the next player
+  id = (id + 1) % 4;
+  game.currentPlayer = id;
     
-    //player draws a card
-    var newCard = game.deck.pop();
+  //player draws a card
+  var newCard = game.deck.pop();
     play.to(game.players[game.currentPlayer]).emit('your turn', id, cardInfo(game.playedhands[id]), cardInfo(newCard));
   }
+}
 
 function remaining_cards() {
   return game.display_deck;
