@@ -39,6 +39,85 @@ var game =  { players: [],
               last_played: []
             };
 
+if(process.argv.length > 2) {
+	run_tests();
+	return;
+}
+
+app.use(express.static(__dirname + '/assets'));
+
+app.get('/', function(req, res){
+  res.sendFile(__dirname + '/pages/index.html');
+});
+
+app.get('/play', function(req, res){
+  res.sendFile(__dirname + '/pages/play.html');
+});
+
+play.on('connection', function(socket){
+  //keep track of how many users are connected
+  usercount++;
+  
+  //if there's less than 4 players, they're added to the player room
+  //otherwise they're added to the non player room
+  console.log("A user has joined.");
+  if(game.players.length < 4){
+    console.log("Player added to players group.");
+  	game.players.push(socket.id);
+  	socket.join('players');
+  	if(game.players.length == 4){
+  	  startGame();
+  	  
+  	} else {
+  	  play.to('players').emit('player update', 4 - usercount);
+  	}
+  } else {
+    console.log("Player added to nonplayers group.");
+  	socket.join('nonplayers');
+  	play.to('nonplayers').emit('nonplayer update', usercount - 4);
+  }
+  
+  //update the page to show how many users are connected
+  play.emit('update', usercount);
+  
+  socket.on('disconnect', function(){
+  	//on disconnect, decrement the user count, remove them from rooms and update
+  	usercount--;
+  	var index = game.players.indexOf(socket.id);
+    if (index > -1) {
+      game.players.splice(index, 1);
+    }
+    play.emit('update', usercount);
+  });
+  
+  socket.on('play card', function(playedCard, otherCard){
+    var id = game.currentPlayer;
+  	//perform turn's action based on card
+  	//check next action based on card
+  	var result = played_card(id, playedCard, otherCard);
+  	//put other card into proper card slot
+  	if(result != 7 && result != 8){
+  	  game.playerHands[id] = otherCard;
+  	}
+  	//get player choice/whatever from front end
+  	
+  	
+  	//actually do the turn
+  	
+  	//move on to the next player
+  	id = (id + 1) % 4;
+    game.currentPlayer = id;
+    
+    //player draws a card
+    var newCard = game.deck.pop();
+    play.to(game.players[game.currentPlayer]).emit('your turn', id, cardInfo(game.playedhands[id]), cardInfo(newCard));
+  });
+});
+
+http.listen(3000, function(){
+  console.log('listening on *:3000');
+});
+
 function startGame(){
   console.log("Starting game.");
   var i = 0;
@@ -116,86 +195,12 @@ function cardInfo(cardID){
       card.name = "UNSW";
       card.description = "If you discard this card for any reason, you are eliminated from the round.";
       break;
-    case else:
+    default:
       card.name = "Unknown Card";
       card.description = "This card doesn't exist. You must have done something wrong.";
   }
   return card;
 }
-
-app.use(express.static(__dirname + '/assets'));
-
-app.get('/', function(req, res){
-  res.sendFile(__dirname + '/pages/index.html');
-});
-
-app.get('/play', function(req, res){
-  res.sendFile(__dirname + '/pages/play.html');
-});
-
-play.on('connection', function(socket){
-  //keep track of how many users are connected
-  usercount++;
-  
-  //if there's less than 4 players, they're added to the player room
-  //otherwise they're added to the non player room
-  console.log("A user has joined.");
-  if(game.players.length < 4){
-    console.log("Player added to players group.");
-  	game.players.push(socket.id);
-  	socket.join('players');
-  	if(game.players.length == 4){
-  	  startGame();
-  	  
-  	} else {
-  	  play.to('players').emit('player update', 4 - usercount);
-  	}
-  } else {
-    console.log("Player added to nonplayers group.");
-  	socket.join('nonplayers');
-  	play.to('nonplayers').emit('nonplayer update', usercount - 4);
-  }
-  
-  //update the page to show how many users are connected
-  play.emit('update', usercount);
-  
-  socket.on('disconnect', function(){
-  	//on disconnect, decrement the user count, remove them from rooms and update
-  	usercount--;
-  	var index = game.players.indexOf(socket.id);
-    if (index > -1) {
-      game.players.splice(index, 1);
-    }
-    play.emit('update', usercount);
-  });
-  
-  socket.on('play card', function(playedCard, otherCard){
-    var id = game.currentPlayer;
-  	//perform turn's action based on card
-  	//check next action based on card
-  	var result = played_card(id, playedCard, otherCard);
-  	//put other card into proper card slot
-  	if(result != 7 && result != 8){
-  	  game.playerHands[id] = otherCard;
-  	}
-  	//get player choice/whatever from front end
-  	
-  	
-  	//actually do the turn
-  	
-  	//move on to the next player
-  	id = (id + 1) % 4;
-    game.currentPlayer = id;
-    
-    //player draws a card
-    var newCard = game.deck.pop();
-    play.to(game.players[game.currentPlayer]).emit('your turn', id, cardInfo(game.playedhands[id]), cardInfo(newCard));
-  });
-});
-
-http.listen(3000, function(){
-  console.log('listening on *:3000');
-});
 
 function remaining_cards() {
   return game.display_deck;
@@ -340,4 +345,11 @@ function remaining_players() {
     }
   }
   return false;
+}
+
+
+function run_tests(){
+  console.log("Tests running...");
+  //put tests here
+  console.log("Tests concluded.");
 }
