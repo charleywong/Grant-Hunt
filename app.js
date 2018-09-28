@@ -91,9 +91,9 @@ play.on('connection', function(socket){
     play.emit('update', usercount);
   });
   
-  socket.on('play card', turnPhaseOne(playedCard, otherCard));
+//  socket.on('play card', turnPhaseOne(playedCard, otherCard));
   
-  socket.on('play card', turnPhaseTwo(targetPlayer, playedCard));
+//  socket.on('play card', turnPhaseTwo(targetPlayer, playedCard));
   
   
 });
@@ -129,9 +129,9 @@ function shuffle(deck){
     r = Math.floor(Math.random() * currIndex);
     currIndex--;	  
 	
-	temp = deck[r];
-	deck[r] = deck[currIndex];
-	deck[currIndex] = temp;
+  	temp = deck[r];
+  	deck[r] = deck[currIndex];
+  	deck[currIndex] = temp;
   }
   return deck;
 }
@@ -152,7 +152,7 @@ function turnPhaseOne(playedCard, otherCard){
   //decide which list of players to send
   var playerList = [];
   //send list of players to front end
-  play.to(game.players[game.currentPlayer]).emit('select player', playerList));
+  play.to(game.players[game.currentPlayer]).emit('select player', playerList);
 }
   	
  
@@ -167,7 +167,6 @@ function turnPhaseTwo(targetPlayer, playedCard){
   //player draws a card
   var newCard = game.deck.pop();
     play.to(game.players[game.currentPlayer]).emit('your turn', id, cardInfo(game.playedhands[id]), cardInfo(newCard));
-  }
 }
 
 function remaining_cards() {
@@ -367,8 +366,43 @@ function run_tests(){
   game.players = [0, 1, 2, 3] 		//populate player list with data to avoid issues
   startGame();						//start game
   
-  console.log(game);
+  console.log("Testing newDeck generated");
+  var deck = newDeck();
+  console.log("Deck Created");
 
+  console.log("Checking correct deck size");
+  assert(deck.length == 16);
+  console.log("Deck size correct");
+
+  console.log("Checking correct cards present in deck");
+  console.log(deck.sort().toString());
+  assert(deck.sort().toString() == "1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8");
+  console.log("All cards present in deck are correct");
+
+  console.log("Checking that shuffle function is valid (test subject to fail in less the 1% of cases)");
+  var testShuffle = [];
+  //Generate a deck of values 0-99
+  for (var i = 0; i < 100; i++){
+    testShuffle.push(i);
+  }
+  var baseString = testShuffle.sort().toString();
   
+  console.log("Shuffling deck of values 0-99 a thousand times, checking for repeated "); 
+  //Shuffle 1000 times, ensuring no repeats
+  seen = [];
+  for (var i = 0; i < 10000; i++){
+    var shuffleResult = shuffle(testShuffle);
+    //Check length is same
+    assert(shuffleResult.length == 100);
+    //Check that all elements are same
+    assert(shuffleResult.sort().toString() == baseString);
+    //Check this permutation isnt already existing
+    assert(!seen.includes(shuffleResult.toString())); 
+    //Add permutation to seen
+    seen.push(shuffleResult);
+  }
+  console.log("Shuffle function successful");
+
+
   console.log("Tests concluded.");
 }
