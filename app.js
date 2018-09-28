@@ -129,8 +129,16 @@ app.get('/', function(req, res){
   res.sendFile(__dirname + '/pages/index.html');
 });
 
+app.get('/index', function(req, res){
+  res.sendFile(__dirname + '/pages/index.html');
+});
+
 app.get('/play', function(req, res){
   res.sendFile(__dirname + '/pages/play.html');
+});
+
+app.get('/rules', function(req, res){
+  res.sendFile(__dirname + '/pages/rules.html');
 });
 
 play.on('connection', function(socket){
