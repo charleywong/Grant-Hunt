@@ -28,30 +28,55 @@
             
             socket.on('start game', function(card){
                 // hide share link button
-                document.getElementById("share-link").style.visibility = "hidden"
+                document.getElementById("share-link").style.visibility = "hidden";
                 // get rid of loading dots
-                document.getElementById("waitingstatus").classList.remove("loading")
+                document.getElementById("waitingstatus").classList.remove("loading");
+                // remove status
+                var parentOfStatus = document.getElementById("status").parentNode;
+                parentOfStatus.removeChild(document.getElementById("status"));
 
+                
                 document.getElementById("waitingstatus").innerHTML = "The game has started!";
+
+                // we need to show every player what their current hand is
+                var card = document.createElement("div");
+                card.setAttribute("class","card");
+                var card_body = document.createElement("div")
+                card_body.setAttribute("class","card-body");
+
+                var cardTitle = document.createElement("h5");
+                // cardText.innerHTML("Heading");
+                var cardText = document.createElement("p");
+                cardText.appendChild(document.createTextNode("TEXT"));
+                card_body.appendChild(cardTitle);
+                card_body.appendChild(cardText);
+                card.appendChild(card_body);
+
+                var dupCard = card.cloneNode(true);
                 document.getElementById("gamewindow").style.visibility = "visible";
+                document.getElementById("card1").appendChild(card);
+                document.getElementById("card2").appendChild(dupCard);
                 document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
-                document.getElementById("playbutton").onclick = function(){
+                document.getElementById("playbutton").onclick = function() {
                     document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
                     socket.emit('end turn');
                     return false;
                 };
+
             });
             
             socket.on('your turn', function(currentPlayer, card){
                 document.getElementById("turnstatus").innerHTML = "It's your turn!";
 
                 // only show the end turn button if it's the current player's turn
-                var btn = document.createElement("button")
-                btn.appendChild(document.createTextNode("End Turn"))
-                btn.setAttribute("id","playbutton")
-                var gameWindow = document.getElementById("gamewindow")
-                gameWindow.appendChild(btn)
+                var btn = document.createElement("button");
+                btn.appendChild(document.createTextNode("End Turn"));
+                btn.setAttribute("id","playbutton");
+                btn.setAttribute("onclick","endTurn()");
+                var gameWindow = document.getElementById("turnend");
+                gameWindow.appendChild(btn);
             });
+
             
             // function copyToClipboard(){
             //     var copyText = document.getElementById('copy');
@@ -63,20 +88,26 @@
             function copyToClipboard() {
                 var textArea = document.createElement("textarea")
             
-                textArea.value = window.location.href
-                document.body.appendChild(textArea)
+                textArea.value = window.location.href;
+                document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('Copy');
 
                 document.body.removeChild(textArea)
             }
+
+            function endTurn() {
+                // alert("end turn")
+                // place holder
+                socket.emit('play card', 8,1);
+            }
+
             window.onbeforeunload = function() {
                 return "";
             };
         </script>
     </head>
     <body>
-        
     <nav class="navbar navbar-light fixed-top">
         <a class="navbar-left" href="/">
             <img src="/images/logo.png" width="200" alt="">
@@ -91,12 +122,24 @@
     <header class="home-banner text-center text-black d-flex">
         <div class="container my-auto">
             <div class="row">
-                <div class="col-lg-12 mx-auto">
-                    <p id="status" class="text-faded mb-5"></p>
+                <div class="col-lg-12 mx-auto" >
+                    <p id="status" class="text-faded mb-5" style="margin: 0"></p>
                     <p id="waitingstatus" class="text-faded mb-5 loading"></p>
-                        <div id="gamewindow" action="" style="visibility: hidden">
-                            <p id="turnstatus" class="text-faded mb-5"></p>
-                            <!-- <button id="playbutton"">End Turn</button> -->
+                        <div class="row" id="gamewindow" action="" style="visibility: hidden" >
+                            <div class="col-lg-12">
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <p id="turnstatus" class="text-faded mb-5"></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6" id="card1"></div>
+                                    <div class="col-6" id="card2"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-12" id="turnend"></div>
+                                </div>
+                            </div>
                         </div>
                 </div>  
             </div>
