@@ -170,7 +170,6 @@ function turnPhaseOne(playedCard, otherCard){
     //need to work out this logic here
     //for if they discard princess or try to discard king or prince with countess in hand
     game.playerHands[id] = 0;
-     var playerList = [];
   }
   //decide which list of players to send
  
@@ -182,7 +181,7 @@ function turnPhaseOne(playedCard, otherCard){
   
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   //actually do the turn
-  if(playedCard != 1)
+  if(playedCard != 1) {
     if(guessedCard != null){
       guessed_card(game.players[game.currentPlayer], targetPlayer, guessedCard);
     } else {
@@ -397,6 +396,8 @@ function remaining_players() {
 
 
 function run_tests(){
+  //run every function without checking results to check for errors
+
   console.log("Tests running...");
   game.players = [0, 1, 2, 3] 		//populate player list with data to avoid issues
   startGame();						//start game
