@@ -39,6 +39,8 @@ var game =  { players: [],
               display_deck: display_deck,
               last_played: []
             };
+            
+var users = [];
 
 if(process.argv.length > 2) {
 	run_tests();
@@ -64,39 +66,54 @@ app.get('/rules', function(req, res){
 });
 
 play.on('connection', function(socket){
-  //keep track of how many users are connected
-  usercount++;
+  console.log("incoming connection from " + socket.id);
+  setTimeout(function() {
+  	play.to(socket.id).emit('ping');
+  }, 8000);
   
-  //if there's less than 4 players, they're added to the player room
-  //otherwise they're added to the non player room
-  console.log("A user has joined.");
-  if(game.players.length < 4){
-    console.log("Player added to players group.");
-  	game.players.push(socket.id);
-  	socket.join('players');
-  	if(game.players.length == 4){
-  	  startGame();
-  	  
-  	} else {
-  	  play.to('players').emit('player update', 4 - usercount);
-  	}
-  } else {
-    console.log("Player added to nonplayers group.");
-  	socket.join('nonplayers');
-  	play.to('nonplayers').emit('nonplayer update', usercount - 4);
-  }
-  
-  //update the page to show how many users are connected
-  play.emit('update', usercount);
+  socket.on('register', function (data) {
+  	console.log("incoming registration from " + socket.id);
+    if (data !== null) {
+      //there was something in localstorage
+      var index = getUserByUId(data);
+      if (index != -1) {
+      	console.log("user reconnected");
+        users[index].disconnected = false;
+        var sid = users[index].socketID;
+        var gameIndex = getPlayerBySId(sid);
+        if(gameIndex != -1){
+          game.players[gameIndex] = socket.id;
+          socket.join('players');
+          play.to(socket.id).emit('player update', 4 - users.length);
+        } else {
+          socket.join('nonplayers');
+          play.to(socket.id).emit('nonplayer update', users.length - 4);
+        }
+        users[index].socketID = socket.id;
+         play.to(socket.id).emit('update', users.length);
+      } else {
+        addNewUser(data, socket);
+      }
+    } else {
+      console.log("error, user joined with no ID");
+    }
+  });
   
   socket.on('disconnect', function(){
-  	//on disconnect, decrement the user count, remove them from rooms and update
-  	usercount--;
-  	var index = game.players.indexOf(socket.id);
-    if (index > -1) {
-      game.players.splice(index, 1);
-    }
-    play.emit('update', usercount);
+    var gind = getPlayerBySId(socket.id);
+    console.log("Disconnect detected, starting timeout. User is player " + gind + ".");
+    var index = getUserBySId(socket.id);
+    if(index == -1) return;
+  	users[index].disconnected = true;
+    setTimeout(function () {
+      if (users[index].disconnected){
+        console.log("User timed out.");
+  	    //on disconnect, decrement the user count, remove them from rooms and update
+  	    removePlayerBySId(socket.id);
+        play.emit('update', users.length);
+      }
+    }, 10000);
+    
   });
   
   socket.on('play card', function(playedCard, otherCard){
@@ -105,6 +122,12 @@ play.on('connection', function(socket){
   
   socket.on('target player', function(targetPlayer, playedCard, guessedCard){
     turnPhaseTwo(targetPlayer, playedCard, guessedCard)
+  });
+  
+  socket.on('pong', function(){
+    setTimeout(function() {
+  	  play.to(socket.id).emit('ping');
+    }, 8000);
   });
   
   
@@ -391,6 +414,73 @@ function cardInfo(cardID){
       card.description = "This card doesn't exist. You must have done something wrong.";
   }
   return card;
+}
+
+function getUserByUId(uid){
+  for(var i = 0; i < users.length; i++){
+    if(users[i].uniqueID == uid){
+      return i;
+    }
+  }
+  return -1;
+}
+
+function getUserBySId(sid){
+  for(var i = 0; i < users.length; i++){
+    if(users[i].socketID == sid){
+      return i;
+    }
+  }
+  return -1;
+}
+
+function getPlayerBySId(sid){
+  for(var i = 0; i < game.players.length; i++){
+    if(game.players[i] == sid){
+      return i;
+    }
+  }
+  return -1;
+}
+
+function removePlayerBySId(data){
+  var gameIndex = getPlayerBySId(data);
+  var userIndex = getUserBySId(data);
+  if(gameIndex > -1){
+    game.players.splice(gameIndex, 1);
+  }
+  if(userIndex > -1){
+    users.splice(userIndex, 1);
+  }
+  
+}
+
+function addNewUser(UId, socket){
+  var SId = socket.id;
+  var entry = {uniqueID: UId, socketID: SId, disconnected: false};
+  users.push(entry);
+  console.log(users);
+  //if there's less than 4 players, they're added to the player room
+  //otherwise they're added to the non player room
+  console.log("A user has joined.");
+  if(game.players.length < 4){
+    console.log("Player added to players group.");
+  	game.players.push(socket.id);
+  	socket.join('players');
+  	if(game.players.length == 4){
+  	  startGame();
+  	  
+  	} else {
+  	  play.to('players').emit('player update', 4 - users.length);
+  	}
+  } else {
+    console.log("Player added to nonplayers group.");
+  	socket.join('nonplayers');
+  	play.to('nonplayers').emit('nonplayer update', users.length - 4);
+  }
+   
+  //update the page to show how many users are connected
+  play.emit('update', users.length);
 }
 
 //returns true if there are at least 2 players remaining, otherwise returns false and sets the winner using playerHands
