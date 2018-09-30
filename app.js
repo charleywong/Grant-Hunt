@@ -67,9 +67,8 @@ app.get('/rules', function(req, res){
 
 play.on('connection', function(socket){
   console.log("incoming connection from " + socket.id);
-  setTimeout(function() {
-  	play.to(socket.id).emit('ping');
-  }, 8000);
+
+  socket.emit('registration request');
   
   socket.on('register', function (data) {
   	console.log("incoming registration from " + socket.id);
@@ -124,11 +123,7 @@ play.on('connection', function(socket){
     turnPhaseTwo(targetPlayer, playedCard, guessedCard)
   });
   
-  socket.on('pong', function(){
-    setTimeout(function() {
-  	  play.to(socket.id).emit('ping');
-    }, 8000);
-  });
+
   
   
 });
@@ -471,9 +466,8 @@ function addNewUser(UId, socket){
   	if(game.players.length == 4){
   	  startGame();
   	  
-  	} else {
-  	  play.to('players').emit('player update', 4 - users.length);
   	}
+  	play.to('players').emit('player update', 4 - users.length);
   } else {
     console.log("Player added to nonplayers group.");
   	socket.join('nonplayers');
