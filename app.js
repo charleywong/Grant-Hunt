@@ -99,9 +99,13 @@ play.on('connection', function(socket){
     play.emit('update', usercount);
   });
   
-  socket.on('play card', turnPhaseOne(playedCard, otherCard));
+  socket.on('play card', function(playedCard, otherCard){
+    turnPhaseOne(playedCard, otherCard);
+  });
   
-  socket.on('target player', turnPhaseTwo(targetPlayer, playedCard, guessedCard));
+  socket.on('target player', function(targetPlayer, playedCard, guessedCard){
+    turnPhaseTwo(targetPlayer, playedCard, guessedCard)
+  });
   
   
 });
@@ -194,7 +198,7 @@ function turnPhaseOne(playedCard, otherCard){
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   var id = game.currentPlayer;
   //actually do the turn
-  if(playedCard != 1) {
+  if(playedCard == 1) {
     if(guessedCard != null){
       guessed_card(id, targetPlayer, guessedCard);
     } else {
