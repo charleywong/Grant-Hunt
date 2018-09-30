@@ -91,7 +91,7 @@ play.on('connection', function(socket){
     play.emit('update', usercount);
   });
   
- socket.on('play card', turnPhaseOne(playedCard, otherCard));
+  socket.on('play card', turnPhaseOne(playedCard, otherCard));
   
   socket.on('target player', turnPhaseTwo(targetPlayer, playedCard, guessedCard));
   
@@ -148,59 +148,74 @@ function turnPhaseOne(playedCard, otherCard){
   //check next action based on card
   var result = played_card(id, playedCard, otherCard);
   //put other card into proper card slot
-  if(result != 7 && result != 8){
-    game.playerHands[id] = otherCard;
-    if(result == 1){
+  if(result == 1){
       //all active players except themselves
-      for(var i = 0; i < 4; i++){
-        if(game.playerHands[i] != 0 && game.currentPlayer != i){
-          playerList.push(i);
-        }
+    for(var i = 0; i < 4; i++){
+      if(game.playerHands[i] != 0 && i != id){
+        playerList.push(i);
       }
-    } else if (result == 5) {
-      //all active players, including themselves
-      for(var i = 0; i < 4; i++){
-         if(game.playerHands[i] != 0){
-           playerList.push(i);
-         }
-       }
     }
-    
-  } else {
-    //need to work out this logic here
-    //for if they discard princess or try to discard king or prince with countess in hand
+  game.playerHands[id] = otherCard;
+  } else if (result == 5) {
+    //all active players, including themselves
+    for(var i = 0; i < 4; i++){
+      if(game.playerHands[i] != 0){
+        playerList.push(i);
+      }
+    }
+    game.playerHands[id] = otherCard;
+  } else if (result == 6){
+    playerList = [];
+    game.playerHands[id] = otherCard;
+  } else if(result == 7){
+    //send a message to say that play is invalid
+    play.to(game.players[id]).emit('invalid play');
+    return;
+  } else if (result == 8){
+    //if they discard princess they lose
     game.playerHands[id] = 0;
+    //move immediately on to the next turn without a second phase
+    //or do we? maybe we should send the second phase message anyway to confirm or something idk
+    nextTurn();
+    return;
   }
-  //decide which list of players to send
- 
   //send list of players to front end
-  play.to(game.players[game.currentPlayer]).emit('select player', playerList);
+  play.to(game.players[id]).emit('select player', playerList);
 }
   	
  
   
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
+  var id = game.currentPlayer;
   //actually do the turn
   if(playedCard != 1) {
     if(guessedCard != null){
-      guessed_card(game.players[game.currentPlayer], targetPlayer, guessedCard);
+      guessed_card(id, targetPlayer, guessedCard);
     } else {
       console.log("Error: guard played with no guessed card");
     }
   } else {
-    selected_player(game.players[game.currentPlayer], targetPlayer, playedCard);
+    selected_player(id, targetPlayer, playedCard);
   }
+  nextTurn();
+}
+
+function nextTurn(){
+  //maybe we can add a check for game end function here?
+  //Seems reasonable to do since game end is always checked right after a player's turn
+   
+  var id = game.currentPlayer;
   //move on to the next player without an empty hand
-  
   id = (id + 1) % 4;
-  game.currentPlayer = id;
-  while(game.playerHands[game.currentPlayer] == 0){
+  while(game.playerHands[id] == 0){
     id = (id + 1) % 4;
-    game.currentPlayer = id;
   }
+  
   //player draws a card
   var newCard = game.deck.pop();
-    play.to(game.players[game.currentPlayer]).emit('your turn', id, cardInfo(game.playerHands[id]), cardInfo(newCard));
+  play.to(game.players[id]).emit('your turn', id, cardInfo(game.playerHands[id]), cardInfo(newCard));
+  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played);
+  game.currentPlayer = id;
 }
 
 function remaining_cards() {
@@ -217,10 +232,6 @@ function play_log(id) {
 
 function get_hand(id) {
   return game.playerHands[id];
-}
-
-function start_turn(id) {
-  game.playerHands[id].push(game.deck.pop());
 }
 
 function played_card(id, card, otherCard) {
