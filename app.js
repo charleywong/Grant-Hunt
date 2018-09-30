@@ -43,6 +43,7 @@ var game =  { players: [],
 if(process.argv.length > 2) {
 	run_tests();
 	return;
+}
 
 app.use(express.static(__dirname + '/assets'));
 
@@ -189,8 +190,6 @@ function turnPhaseOne(playedCard, otherCard){
   //send list of players to front end
   play.to(game.players[id]).emit('select player', playerList);
 }
-  	
- 
   
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   var id = game.currentPlayer;
@@ -425,3 +424,5 @@ function run_tests(){
   
   console.log("Tests concluded.");
 }
+
+
