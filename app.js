@@ -28,12 +28,12 @@ var display_deck = {1:5, 2:2, 3:2, 4:2, 5:2, 6:1, 7:1, 8:1};
 display_deck keeps track of unseen cards
 when a player is knocked out of a round, playerhand[player_id] is set to 0
 when the deck is empty, end_game function sets playerhand value for each player to 0 for the losers, and 1 for the winners
-when there is only one player left, the playerhands values are changed to be 0 for the losers and 1 for the winner
+when there is only one player left, the playerHands values are changed to be 0 for the losers and 1 for the winner
 **/
 
 //keeps track of current running game
 var game =  { players: [], 
-              playerhands: [],
+              playerHands: [],
               currentPlayer: 0,
               deck: deck,
               display_deck: display_deck,
@@ -91,9 +91,9 @@ play.on('connection', function(socket){
     play.emit('update', usercount);
   });
   
-  socket.on('play card', turnPhaseOne(playedCard, otherCard));
+ socket.on('play card', turnPhaseOne(playedCard, otherCard));
   
-  socket.on('play card', turnPhaseTwo(targetPlayer, playedCard));
+  socket.on('target player', turnPhaseTwo(targetPlayer, playedCard, guessedCard));
   
   
 });
@@ -110,7 +110,7 @@ function startGame(){
   //every player draws one card
   while(i < game.players.length){
     var card = game.deck.pop();
-    game.playerhands[i] = card;
+    game.playerHands[i] = card;
     game.last_played.push(0);
     play.to(game.players[i]).emit('start game', card);
     i++;
@@ -129,9 +129,9 @@ function shuffle(deck){
     r = Math.floor(Math.random() * currIndex);
     currIndex--;	  
 	
-	temp = deck[r];
-	deck[r] = deck[currIndex];
-	deck[currIndex] = temp;
+  	temp = deck[r];
+  	deck[r] = deck[currIndex];
+  	deck[currIndex] = temp;
   }
   return deck;
 }
@@ -142,32 +142,66 @@ function newDeck(){
 
 function turnPhaseOne(playedCard, otherCard){
   var id = game.currentPlayer;
+  var playerList = [];
+ 
   //perform turn's action based on card
   //check next action based on card
   var result = played_card(id, playedCard, otherCard);
   //put other card into proper card slot
   if(result != 7 && result != 8){
     game.playerHands[id] = otherCard;
+    if(result == 1){
+      //all active players except themselves
+      for(var i = 0; i < 4; i++){
+        if(game.playerHands[i] != 0 && game.currentPlayer != i){
+          playerList.push(i);
+        }
+      }
+    } else if (result == 5) {
+      //all active players, including themselves
+      for(var i = 0; i < 4; i++){
+         if(game.playerHands[i] != 0){
+           playerList.push(i);
+         }
+       }
+    }
+    
+  } else {
+    //need to work out this logic here
+    //for if they discard princess or try to discard king or prince with countess in hand
+    game.playerHands[id] = 0;
+     var playerList = [];
   }
   //decide which list of players to send
-  var playerList = [];
+ 
   //send list of players to front end
-  play.to(game.players[game.currentPlayer]).emit('select player', playerList));
+  play.to(game.players[game.currentPlayer]).emit('select player', playerList);
 }
   	
  
   
-function turnPhaseTwo(targetPlayer, playedCard){
+function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   //actually do the turn
-  selected_player(game.players[game.currentPlayer], targetPlayer, playedCard);
-  //move on to the next player
+  if(playedCard != 1)
+    if(guessedCard != null){
+      guessed_card(game.players[game.currentPlayer], targetPlayer, guessedCard);
+    } else {
+      console.log("Error: guard played with no guessed card");
+    }
+  } else {
+    selected_player(game.players[game.currentPlayer], targetPlayer, playedCard);
+  }
+  //move on to the next player without an empty hand
+  
   id = (id + 1) % 4;
   game.currentPlayer = id;
-    
+  while(game.playerHands[game.currentPlayer] == 0){
+    id = (id + 1) % 4;
+    game.currentPlayer = id;
+  }
   //player draws a card
   var newCard = game.deck.pop();
-    play.to(game.players[game.currentPlayer]).emit('your turn', id, cardInfo(game.playedhands[id]), cardInfo(newCard));
-  }
+    play.to(game.players[game.currentPlayer]).emit('your turn', id, cardInfo(game.playerHands[id]), cardInfo(newCard));
 }
 
 function remaining_cards() {
@@ -183,15 +217,15 @@ function play_log(id) {
 }
 
 function get_hand(id) {
-  return game.playerhands[id];
+  return game.playerHands[id];
 }
 
 function start_turn(id) {
-  game.playerhands[id].push(game.deck.pop());
+  game.playerHands[id].push(game.deck.pop());
 }
 
 function played_card(id, card, otherCard) {
-  if ((otherCard == 5 || otherCard == 6) && game.playerhands[id].includes(7)) {
+  if ((otherCard == 5 || otherCard == 6) && game.playerHands[id].includes(7)) {
     if (card == 7) return 0;
     else return 7;//player must discard countess
   }
@@ -203,7 +237,7 @@ function played_card(id, card, otherCard) {
   } else if (card == 5) {
     return 5;//prompt to display all players including yourself
   } else if (card == 8) {
-    game.playerhands[id] = 0;
+    game.playerHands[id] = 0;
     return 8; //player is knocked out
   } else {
     return 0; //no additional prompts
@@ -222,19 +256,19 @@ function selected_player(id, player, card) {
   if (card == 1) {
     return 1; //dispay card list to pick from
   } else if (card == 2) {
-    return game.playerhands[player]; //id of card to display to current player
+    return game.playerHands[player]; //id of card to display to current player
   } else if (card == 3) {
-    if (game.playerhands[id] < game.playerhands[player]) {
-      game.display_deck[game.playerhands[id]]--;
-      game.playerhands[id] = 0;
+    if (game.playerHands[id] < game.playerHands[player]) {
+      game.display_deck[game.playerHands[id]]--;
+      game.playerHands[id] = 0;
       if (game.deck.length == 0) {
         end_game();
       }
       //need to notify front end that player is knocked out and that the game is over
       return 8; //current player is knocked out
-    } else if (game.playerhands[id] > game.playerhands[player]) {
-      game.display_deck[game.playerhands[player]]--;
-      game.playerhands[player] = 0;
+    } else if (game.playerHands[id] > game.playerHands[player]) {
+      game.display_deck[game.playerHands[player]]--;
+      game.playerHands[player] = 0;
 
 
 
@@ -247,12 +281,12 @@ function selected_player(id, player, card) {
       //nothing happens
     }
   } else if (card == 5) {
-    game.display_deck[game.playerhands[player]]--;
-    game.playerhands[player] = game.deck.pop();
+    game.display_deck[game.playerHands[player]]--;
+    game.playerHands[player] = game.deck.pop();
   } else if (card == 6) {
-    var temp = game.playerhands[id];
-    game.playerhands[id] = game.playerhands[player];
-    game.playerhands[player] = temp;
+    var temp = game.playerHands[id];
+    game.playerHands[id] = game.playerHands[player];
+    game.playerHands[player] = temp;
   }
 }
 
@@ -263,9 +297,9 @@ function guessed_card (id, player, card) {
   //need to notify front end if player is knocked out and that the game is over somehow!!!  
 
 
-  if (card == game.playerhands[player]) {
+  if (card == game.playerHands[player]) {
     game.display_deck[card]--;
-    game.playerhands[player] = 0;
+    game.playerHands[player] = 0;
     return -8; //other player is knocked out
   }
   return 0;
@@ -275,20 +309,20 @@ function end_game() {
   var largest_id = [];
   var largest_card = 0;
   for (var i = 0; i < 4; i++) {
-    if (game.playerhands[i] != 0) {
-      if (game.playerhands[i] == largest_card) {
+    if (game.playerHands[i] != 0) {
+      if (game.playerHands[i] == largest_card) {
         largest_id.push(i);
-      } else if (game.playerhands[i] > largest_card) {
-        largest_card = game.playerhands[i];
+      } else if (game.playerHands[i] > largest_card) {
+        largest_card = game.playerHands[i];
         largest_id = [i];
       }
     }
   }
   for (var i = 0; i < 4; i++) {
     if (largest_id.includes(i)) {
-      game.playerhands[i] = 1;
+      game.playerHands[i] = 1;
     } else {
-      game.playerhands[i] = 0;
+      game.playerHands[i] = 0;
     }
   }
 }
@@ -339,12 +373,12 @@ function cardInfo(cardID){
   return card;
 }
 
-//returns true if there are at least 2 players remaining, otherwise returns false and sets the winner using playerhands
+//returns true if there are at least 2 players remaining, otherwise returns false and sets the winner using playerHands
 function remaining_players() {
   var flag = false;
   var id = -1;
   for (var i = 0; i < 4; i++) {
-    if (game.playerhands[i] != 0) {
+    if (game.playerHands[i] != 0) {
       id = i;
       if (flag) return true;
       flag = true;
@@ -353,9 +387,9 @@ function remaining_players() {
   
   for (var i = 0; i < 4; i++) {
     if (i == id) {
-      game.playerhands[i] = 1;
+      game.playerHands[i] = 1;
     } else {
-      game.playerhands[i] = 0;
+      game.playerHands[i] = 0;
     }
   }
   return false;
