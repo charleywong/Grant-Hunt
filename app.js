@@ -415,6 +415,15 @@ function remaining_players() {
   return false;
 }
 
+//checks the state of the game to see if it has reached an end state or not
+function check_end_game() {
+  if (game.deck.length == 0) {
+    end_game();
+    return 0;//deck is empty
+  }
+
+  return remaining_players();
+}
 
 function run_tests(){
   //run every function without checking results to check for errors
