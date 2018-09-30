@@ -236,6 +236,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
 function nextTurn(){
   //maybe we can add a check for game end function here?
   //Seems reasonable to do since game end is always checked right after a player's turn
+   check_end_game();
    
   var id = game.currentPlayer;
   //move on to the next player without an empty hand
