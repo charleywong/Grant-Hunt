@@ -15,6 +15,7 @@
             socket.on('player update', function(data){
                 if(data > 0) {
                     document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players";
+                    // alert(data)
                     // document.getElementById("copy").style.visibility = "visible";
                     document.getElementById("share-link").style.visibility = "visible";
                 } else {
@@ -26,7 +27,8 @@
                 document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
             });
             
-            socket.on('start game', function(card){
+            socket.on('start game', function(data){
+                // console.log(JSON.stringify(card).toString());
                 // hide share link button
                 document.getElementById("share-link").style.visibility = "hidden";
                 // get rid of loading dots
@@ -45,23 +47,24 @@
                 card_body.setAttribute("class","card-body");
 
                 var cardTitle = document.createElement("h5");
-                // cardText.innerHTML("Heading");
                 var cardText = document.createElement("p");
-                cardText.appendChild(document.createTextNode("TEXT"));
+
+                cardText.style.color = "black";
+                // cardText.appendChild(text);
+                cardText.innerHTML = "player card: " + JSON.stringify(data);
                 card_body.appendChild(cardTitle);
                 card_body.appendChild(cardText);
                 card.appendChild(card_body);
 
-                var dupCard = card.cloneNode(true);
                 document.getElementById("gamewindow").style.visibility = "visible";
                 document.getElementById("card1").appendChild(card);
-                document.getElementById("card2").appendChild(dupCard);
+                // document.getElementById("card2").appendChild(dupCard);
                 document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
-                document.getElementById("playbutton").onclick = function() {
-                    document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
-                    socket.emit('end turn');
-                    return false;
-                };
+                // document.getElementById("playbutton").onclick = function() {
+                    // document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
+                //     socket.emit('end turn');
+                //     return false;
+                // };
 
             });
             
@@ -69,12 +72,37 @@
                 document.getElementById("turnstatus").innerHTML = "It's your turn!";
 
                 // only show the end turn button if it's the current player's turn
-                var btn = document.createElement("button");
-                btn.appendChild(document.createTextNode("End Turn"));
-                btn.setAttribute("id","playbutton");
-                btn.setAttribute("onclick","endTurn()");
-                var gameWindow = document.getElementById("turnend");
-                gameWindow.appendChild(btn);
+                // var btn = document.createElement("button");
+                // btn.appendChild(document.createTextNode("End Turn"));
+                // btn.setAttribute("id","playbutton");
+                // btn.setAttribute("onclick","endTurn()");
+                // var gameWindow = document.getElementById("turnend");
+                // gameWindow.appendChild(btn);
+                document.getElementById("playbutton").style.visibility = "visible";
+
+                // var card1 = document.getElementById("card1").childNodes;
+                var card2 = document.getElementById("card2");
+                // clone card1 and then update text inside to new card
+                // for (var i = 0; i < card1.length; i++) {
+                //     var temp = card1[i].cloneNode(true);
+                //     card2.appendChild(temp);
+                // }
+                var cardData = document.createElement("div");
+                cardData.setAttribute("class","card");
+                var card_body = document.createElement("div")
+                card_body.setAttribute("class","card-body");
+
+                var cardTitle = document.createElement("h5");
+                var cardText = document.createElement("p");
+
+                cardText.style.color = "black";
+                // cardText.appendChild(text);
+                cardText.innerHTML = "player card: " + JSON.stringify(card);
+                card_body.appendChild(cardTitle);
+                card_body.appendChild(cardText);
+                cardData.appendChild(card_body);
+
+                card2.appendChild(cardData)
             });
 
             
@@ -93,13 +121,16 @@
                 textArea.select();
                 document.execCommand('Copy');
 
-                document.body.removeChild(textArea)
+                document.body.removeChild(textArea);
             }
 
             function endTurn() {
-                // alert("end turn")
+                // alert("end turn");
+                document.getElementById("playbutton").style.visibility = "hidden";
+                document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
                 // place holder
                 socket.emit('play card', 8,1);
+
             }
 
             window.onbeforeunload = function() {
@@ -123,7 +154,7 @@
         <div class="container my-auto">
             <div class="row">
                 <div class="col-lg-12 mx-auto" >
-                    <p id="status" class="text-faded mb-5" style="margin: 0"></p>
+                    <p id="status" class="text-faded mb-5"></p>
                     <p id="waitingstatus" class="text-faded mb-5 loading"></p>
                         <div class="row" id="gamewindow" action="" style="visibility: hidden" >
                             <div class="col-lg-12">
@@ -137,7 +168,10 @@
                                     <div class="col-6" id="card2"></div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-lg-12" id="turnend"></div>
+                                    <div class="col-lg-12" id="turnend">
+                                        <!-- <a class="button" id="playbutton" onclick="endTurn()">Play Card</a> -->
+                                        <a class="button" id="playbutton" onclick="endTurn()" style="visibility: hidden;">Play Card</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
