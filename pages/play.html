@@ -95,15 +95,20 @@
                 card_body.setAttribute("class","card-body");
 
                 var cardTitle = document.createElement("h5");
+                var cardImage = document.createElement("img");
                 var cardText = document.createElement("p");
 
                 cardTitle.style.color = "black";
                 cardTitle.innerHTML = card.name;
 
+                cardImage.setAttribute("src","/images/frame-landscape.png")
+                cardImage.style.width = "10em";
+                cardImage.style.height = "10em";
                 cardText.style.color = "black";
                 // cardText.appendChild(text);
                 cardText.innerHTML = "Strength: " + card.strength + "<br>Effect: " + card.description;
                 card_body.appendChild(cardTitle);
+                card_body.appendChild(cardImage);
                 card_body.appendChild(cardText);
                 cardData.appendChild(card_body);
 
