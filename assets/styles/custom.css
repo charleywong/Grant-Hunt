@@ -46,32 +46,45 @@ h1, h2, h3, h4, h5, h6 {
 	opacity:1''
 }
 
-.history {
+.game-sidebar {
 	height:100%;
 	width:20%;
 	background-color:#3f4f96;
-	position:fixed!important;
+	position:absolute;
 	z-index:1;
 	overflow:wrap;
 	left: 0;
 	top:70px;
 	color:white;
 	padding-top:2%;
-	padding-left: 1%;
 	align-content: center;
 }
 
-.history-content > hr{
+.game-sidebar > hr{
 	opacity:0.3;
+	width:100%;
 }
 
-.history-content {
-	float: left;
+.history-content > #history-content{
+	width: 100%;
+    text-align: left;
+	padding-left: 3%;
+}
+
+
+.player-table{
+	margin-left: auto;
+    margin-right: auto;
+}
+
+.player-table > thead > tr > th{
+	padding-left: 5%;
 }
 
 .game {
 	margin-left: 20%;
 }
+
 .home-banner {
 	color:white;
 	padding: 10%;
