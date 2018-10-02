@@ -17,24 +17,23 @@
                     document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players";
                     // alert(data)
                     document.getElementById("share-link").style.visibility = "visible";
-                    document.getElementById("waitingstatus").style.visibility = "visible";
                 } 
             });
             
             socket.on('nonplayer update', function(data){
-                document.getElementById("waitingstatus").style.visibility = "visible";
                 document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
             });
             
             socket.on('start game', function(data){
                 // hide share link button
                 document.getElementById("share-link").style.visibility = "hidden";
-                // hide status
-                document.getElementById("waitingstatus").style.visibility = "hidden";
                 
                 // remove status
                 var parentOfStatus = document.getElementById("status").parentNode;
                 parentOfStatus.removeChild(document.getElementById("status"));
+                //remove gameWait; copy button and waitingstatus
+                var parentOfWait = document.getElementById("gameWait").parentNode;
+                parentOfWait.removeChild(document.getElementById("gameWait"));
 
                 // we need to show every player what their current hand is
                 var card = document.createElement("div");
@@ -141,7 +140,11 @@
     
     
     <header class="home-banner d-flex">
-        <div class="container my-auto text-center">
+        <div class="container my-auto text-center">   
+            <div id='gameWait' class="waiting">
+                <p id="waitingstatus" class="loading status"></p>
+                <a class="button" id="share-link" onclick="copyToClipboard()" style="visibility: hidden;">Click to copy shareable link!</a>
+            </div>
             <div id="gamewindow" action="" style="visibility: hidden" >
                 <div class="history" id="history">
                     <h6>HISTORY</h6>
@@ -166,12 +169,7 @@
                 </div> 
             </div>
             <!-- option 1 -->
-            <div class='row'>
-                <div class="col-lg-12 mx-auto">
-                    <p id="waitingstatus" class="text-faded mb-5 loading" style="visibility: hidden;"></p>
-                    <a class="button" id="share-link" onclick="copyToClipboard()" style="visibility: hidden;">Click to copy shareable link!</a>
-                </div>
-            </div>
+            
             <!-- option 2 -->
             <!-- <div class="row">
                 <div class="col-lg-12 mx-auto">
