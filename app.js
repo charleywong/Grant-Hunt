@@ -12,14 +12,14 @@ var usercount = 0;
 /**
 Card list:
 0: Empty Card!
-1: Guard		Built Environment		(5 copies)
-2: Priest		Arts					(2 copies)
-3: Baron		Law						(2 copies)
-4: Handmaiden	Medicine				(2 copies)
-5: Prince		Science					(2 copies)
-6: King			Engineering				(1 copy)
-7: Countess		Business				(1 copy)
-8: Princess		UNSW					(1 copy)
+1: Guard    Built Environment   (5 copies)
+2: Priest   Arts          (2 copies)
+3: Baron    Law           (2 copies)
+4: Handmaiden Medicine        (2 copies)
+5: Prince   Science         (2 copies)
+6: King     Engineering       (1 copy)
+7: Countess   Business        (1 copy)
+8: Princess   UNSW          (1 copy)
 **/
 var deck = [1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8];
 var display_deck = {1:5, 2:2, 3:2, 4:2, 5:2, 6:1, 7:1, 8:1};
@@ -43,8 +43,8 @@ var game =  { players: [],
 var users = [];
 
 if(process.argv.length > 2) {
-	run_tests();
-	return;
+  run_tests();
+  return;
 }
 
 app.use(express.static(__dirname + '/assets'));
@@ -71,12 +71,12 @@ play.on('connection', function(socket){
   socket.emit('registration request');
   
   socket.on('register', function (data) {
-  	console.log("incoming registration from " + socket.id);
+    console.log("incoming registration from " + socket.id);
     if (data !== null) {
       //there was something in localstorage
       var index = getUserByUId(data);
       if (index != -1) {
-      	console.log("user reconnected");
+        console.log("user reconnected");
         users[index].disconnected = false;
         var sid = users[index].socketID;
         var gameIndex = getPlayerBySId(sid);
@@ -103,19 +103,18 @@ play.on('connection', function(socket){
     console.log("Disconnect detected, starting timeout. User is player " + gind + ".");
     var index = getUserBySId(socket.id);
     if(index == -1) return;
-  	users[index].disconnected = true;
+    users[index].disconnected = true;
     setTimeout(function () {
       if (users[index].disconnected){
         console.log("User timed out.");
-  	    //on disconnect, decrement the user count, remove them from rooms and update
-  	    removePlayerBySId(socket.id);
+        //on disconnect, decrement the user count, remove them from rooms and update
+        removePlayerBySId(socket.id);
         play.emit('update', users.length);
       }
     }, 10000);
     
   });
   
-<<<<<<< HEAD
   socket.on('play card', function(playedCard, otherCard){
     turnPhaseOne(playedCard, otherCard);
   });
@@ -125,11 +124,6 @@ play.on('connection', function(socket){
   });
   
 
-=======
-//  socket.on('play card', turnPhaseOne(playedCard, otherCard));
-  
-//  socket.on('play card', turnPhaseTwo(targetPlayer, playedCard));
->>>>>>> testing
   
   
 });
@@ -163,11 +157,11 @@ function shuffle(deck){
   var r;
   while (0 !== currIndex){
     r = Math.floor(Math.random() * currIndex);
-    currIndex--;	  
-	
-  	temp = deck[r];
-  	deck[r] = deck[currIndex];
-  	deck[currIndex] = temp;
+    currIndex--;    
+  
+    temp = deck[r];
+    deck[r] = deck[currIndex];
+    deck[currIndex] = temp;
   }
   return deck;
 }
@@ -216,11 +210,7 @@ function turnPhaseOne(playedCard, otherCard){
     return;
   }
   //send list of players to front end
-<<<<<<< HEAD
   play.to(game.players[id]).emit('select player', playerList);
-=======
-  play.to(game.players[game.currentPlayer]).emit('select player', playerList);
->>>>>>> testing
 }
   
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
@@ -252,13 +242,9 @@ function nextTurn(){
   
   //player draws a card
   var newCard = game.deck.pop();
-<<<<<<< HEAD
   play.to(game.players[id]).emit('your turn', id, cardInfo(game.playerHands[id]), cardInfo(newCard));
   play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played);
   game.currentPlayer = id;
-=======
-    play.to(game.players[game.currentPlayer]).emit('your turn', id, cardInfo(game.playedhands[id]), cardInfo(newCard));
->>>>>>> testing
 }
 
 function remaining_cards() {
@@ -387,10 +373,10 @@ function cardInfo(cardID){
       card.name = "Empty";
       card.description = "You don't have a card!"
       break;
-	case 1:
-	  card.name = "Built Environment";
-	  card.description = "Choose a player and guess a card. If that player is holding that card, they discard it.";
-	  break;
+  case 1:
+    card.name = "Built Environment";
+    card.description = "Choose a player and guess a card. If that player is holding that card, they discard it.";
+    break;
     case 2:
       card.name = "Arts";
       card.description = "Choose a player and view their hand.";
@@ -475,17 +461,17 @@ function addNewUser(UId, socket){
   console.log("A user has joined.");
   if(game.players.length < 4){
     console.log("Player added to players group.");
-  	game.players.push(socket.id);
-  	socket.join('players');
-  	if(game.players.length == 4){
-  	  startGame();
-  	  
-  	}
-  	play.to('players').emit('player update', 4 - users.length);
+    game.players.push(socket.id);
+    socket.join('players');
+    if(game.players.length == 4){
+      startGame();
+      
+    }
+    play.to('players').emit('player update', 4 - users.length);
   } else {
     console.log("Player added to nonplayers group.");
-  	socket.join('nonplayers');
-  	play.to('nonplayers').emit('nonplayer update', users.length - 4);
+    socket.join('nonplayers');
+    play.to('nonplayers').emit('nonplayer update', users.length - 4);
   }
    
   //update the page to show how many users are connected
