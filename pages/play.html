@@ -16,29 +16,25 @@
                 if(data > 0) {
                     document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players";
                     // alert(data)
-                    // document.getElementById("copy").style.visibility = "visible";
                     document.getElementById("share-link").style.visibility = "visible";
-                } else {
-                    document.getElementById("waitingstatus").innerHTML = "The game has started!";
-                }
+                    document.getElementById("waitingstatus").style.visibility = "visible";
+                } 
             });
             
             socket.on('nonplayer update', function(data){
+                document.getElementById("waitingstatus").style.visibility = "visible";
                 document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
             });
             
             socket.on('start game', function(data){
-                // console.log(JSON.stringify(card).toString());
                 // hide share link button
                 document.getElementById("share-link").style.visibility = "hidden";
-                // get rid of loading dots
-                document.getElementById("waitingstatus").classList.remove("loading");
+                // hide status
+                document.getElementById("waitingstatus").style.visibility = "hidden";
+                
                 // remove status
                 var parentOfStatus = document.getElementById("status").parentNode;
                 parentOfStatus.removeChild(document.getElementById("status"));
-
-                
-                document.getElementById("waitingstatus").innerHTML = "The game has started!";
 
                 // we need to show every player what their current hand is
                 var card = document.createElement("div");
@@ -48,7 +44,7 @@
 
                 var cardTitle = document.createElement("h5");
                 var cardText = document.createElement("p");
-
+                console.log(JSON.stringify(data))
                 cardText.style.color = "black";
                 // cardText.appendChild(text);
                 cardText.innerHTML = "player card: " + JSON.stringify(data);
@@ -67,6 +63,7 @@
                 // };
 
             });
+            
             
             socket.on('your turn', function(currentPlayer, card){
                 document.getElementById("turnstatus").innerHTML = "It's your turn!";
@@ -105,14 +102,6 @@
                 card2.appendChild(cardData)
             });
 
-            
-            // function copyToClipboard(){
-            //     var copyText = document.getElementById('copy');
-            //     copyText.select();
-            //     document.execCommand("copy");
-            //     // alert(copyText.value);
-            // }
-
             function copyToClipboard() {
                 var textArea = document.createElement("textarea")
             
@@ -125,13 +114,14 @@
             }
 
             function endTurn() {
-                // alert("end turn");
                 document.getElementById("playbutton").style.visibility = "hidden";
                 document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
                 // place holder
                 socket.emit('play card', 8,1);
 
             }
+
+            
 
             window.onbeforeunload = function() {
                 return "";
@@ -143,45 +133,42 @@
         <a class="navbar-left" href="/">
             <img src="/images/logo.png" width="200" alt="">
             <ul>
-                <!-- <li><a href="play">Play</a></li> -->
                 <li><a href="rules">Rules</a></li>
                 <li><a href="/" style="color: #ff9300" onclick="confirmLeave()">Leave Game</a></li>
             </ul>
         </a>
     </nav>
-
-    <header class="home-banner text-center text-black d-flex">
-        <div class="container my-auto">
-            <div class="row">
-                <div class="col-lg-12 mx-auto" >
-                    <p id="status" class="text-faded mb-5"></p>
-                    <p id="waitingstatus" class="text-faded mb-5 loading"></p>
-                        <div class="row" id="gamewindow" action="" style="visibility: hidden" >
-                            <div class="col-lg-12">
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        <p id="turnstatus" class="text-faded mb-5"></p>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-6" id="card1"></div>
-                                    <div class="col-6" id="card2"></div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-lg-12" id="turnend">
-                                        <!-- <a class="button" id="playbutton" onclick="endTurn()">Play Card</a> -->
-                                        <a class="button" id="playbutton" onclick="endTurn()" style="visibility: hidden;">Play Card</a>
-                                    </div>
-                                </div>
-                            </div>
+    
+    
+    <header class="home-banner d-flex">
+        <div class="container my-auto text-center">
+            <div id="gamewindow" action="" style="visibility: hidden" >
+                <div class="history" id="history">
+                    <h6>HISTORY</h6>
+                    <hr>
+                    <div class="history-content">
+                        <p id="history-content">Loreum ipsum</p>
+                        <hr>
+                    </div>
+                </div>
+                <div class="game text-center">
+                    <p id="status" class="game-status"></p>
+                    <p id="turnstatus" class="game-status"></p>
+                    <div class="row">
+                        <div class="col-6" id="card1"></div>
+                        <div class="col-6" id="card2"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12" id="turnend">
+                            <a class="button" id="playbutton" onclick="endTurn()" style="visibility: hidden;">Play Card</a>
                         </div>
-                </div>  
+                    </div>
+                </div> 
             </div>
             <!-- option 1 -->
             <div class='row'>
                 <div class="col-lg-12 mx-auto">
-                    <!-- <button class="copy-btn" id="share-link" onclick="copyToClipboard()" style="visibility: hidden;">Click to copy shareable 
-                    link!</button> -->
+                    <p id="waitingstatus" class="text-faded mb-5 loading" style="visibility: hidden;"></p>
                     <a class="button" id="share-link" onclick="copyToClipboard()" style="visibility: hidden;">Click to copy shareable link!</a>
                 </div>
             </div>
