@@ -124,12 +124,12 @@ function startGame(){
     var card = game.deck.pop();
     game.playerHands[i] = card;
     game.last_played.push(0);
-    play.to(game.players[i]).emit('start game', card);
+    play.to(game.players[i]).emit('start game', cardInfo(card));
     i++;
   }
   //draw a card for player 0
   var newCard = game.deck.pop();
-  play.to(game.players[0]).emit('your turn', game.currentPlayer, newCard);
+  play.to(game.players[0]).emit('your turn', game.currentPlayer, cardInfo(newCard));
   console.log("New game started. It is player 0's turn. SocketID: " + game.players[0]);
 }
 
