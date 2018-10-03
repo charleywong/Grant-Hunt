@@ -170,6 +170,22 @@ function newDeck(){
   return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
+function playersInGame(){
+  var remainingPlayersInRound = [];
+    var remainingPlayersInGame = [];
+    for(var i = 0; i < game.players.length; i++){
+      if(playerHands[i] != -1){
+        remainingPlayersInGame.push(i);
+      }
+    
+    if(playerHands[i] > 0){
+      remainingPlayersInRound.push(i);
+    }
+  }
+  play.to('players').emit('remaining players', remainingPlayersInGame, remainingPlayersInRound);
+}
+
+
 function turnPhaseOne(playedCard, otherCard){
   var id = game.currentPlayer;
   var playerList = [];
@@ -257,6 +273,8 @@ function nextTurn(){
   play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played, remainingPlayersInRound, remainingPlayersInGame);
   game.currentPlayer = id;
 }
+
+
 
 function remaining_cards() {
   return game.display_deck;

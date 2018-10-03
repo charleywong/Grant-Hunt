@@ -12,13 +12,14 @@
             var socket = io('/play');
             var cardLastClicked;
             var otherPlayerCard;
-            
+            var playersInGame;
+            var playersInRound;
+
             socket.on('registration request', function(){
 				var uid = sessionStorage.getItem('gameUniqueId');
 				if(uid == null){
 					console.log("no session storage found, creating new ID");
-					console.lo
-					var randomlyGeneratedUID = Math.random().toString(36).substring(3,16) + +new Date;
+					var randomlyGeneratedUID = Math.random().toString(36).substring(3,16) + new Date;
 					sessionStorage.setItem('gameUniqueId', randomlyGeneratedUID);
 				} else {
 		 			console.log("session storage already found");
@@ -45,7 +46,7 @@
                     document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
                 }
             });
-            
+
             socket.on('start game', function(data){
                 // hide share link button
                 document.getElementById("share-link").style.visibility = "hidden";
@@ -96,6 +97,10 @@
 
             });
             
+            socket.on('remaining players', function(remainingPlayersInGame, remainingPlayersInRound){
+                console.log(remainingPlayersInGame);
+                console.log(remainingPlayersInRound);
+            });
             
             socket.on('your turn', function(currentPlayer, card){
                 document.getElementById("turnstatus").innerHTML = "It's your turn!";
@@ -106,11 +111,7 @@
 
                 // var card1 = document.getElementById("card1").childNodes;
                 var card2 = document.getElementById("card2");
-                // clone card1 and then update text inside to new card
-                // for (var i = 0; i < card1.length; i++) {
-                //     var temp = card1[i].cloneNode(true);
-                //     card2.appendChild(temp);
-                // }
+                
                 var cardData = document.createElement("div");
                 cardData.setAttribute("class","card");
                 var card_body = document.createElement("div")
@@ -138,16 +139,6 @@
                 card2.appendChild(cardData)
             });
 
-            
-
-            
-            // function copyToClipboard(){
-            //     var copyText = document.getElementById('copy');
-            //     copyText.select();
-            //     document.execCommand("copy");
-            //     // alert(copyText.value);
-            // }
-
             function copyToClipboard() {
                 var textArea = document.createElement("textarea")
             
@@ -167,14 +158,14 @@
                 console.log(cardLastClicked);
                 socket.emit('play card', cardLastClicked, 1);
                 if(cardLastClicked == 1){
-                    console.log("help cardLastClicked");
                     builtEnvironment();
                 }
             }
 
             function builtEnvironment(){
                 console.log("I'm here");
-                $('#myModal').modal('show');
+                $('#gameModal').modal('show');
+                
             }
 
             function saveInfo(card) {
@@ -304,7 +295,7 @@
         </div>
     </header>
     <!-- Modal -->
-    <div class="modal" id="myModal">
+    <div class="modal" id="gameModal">
         <div class="modal-dialog">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -315,7 +306,7 @@
                 
                 <!-- Modal body -->
                 <div class="modal-body">
-                    Modal body..
+                    <p id="information"></p>
                 </div>
                 
                 <!-- Modal footer -->
