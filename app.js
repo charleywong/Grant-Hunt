@@ -122,15 +122,12 @@ play.on('connection', function(socket){
   socket.on('target player', function(targetPlayer, playedCard, guessedCard){
     turnPhaseTwo(targetPlayer, playedCard, guessedCard)
   });
-  
-
-  
-  
 });
 
 http.listen(3000, function(){
   console.log('listening on *:3000');
 });
+
 
 function startGame(){
   console.log("Starting game.");
@@ -526,22 +523,24 @@ function run_tests(){
   //run every function without checking results to check for errors
 
   console.log("Tests running...");
-  game.players = [0, 1, 2, 3] 		//populate player list with data to avoid issues
-  startGame();						//start game
   
-  console.log("Testing newDeck generated");
+  console.log("");
+  
+  console.log("Testing newDeck function");
   var deck = newDeck();
   console.log("Deck Created");
-
   console.log("Checking correct deck size");
   assert(deck.length == 16);
   console.log("Deck size correct");
-
   console.log("Checking correct cards present in deck");
   console.log(deck.sort().toString());
   assert(deck.sort().toString() == "1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8");
   console.log("All cards present in deck are correct");
+  console.log("newDeck function successful");
 
+  console.log("");
+
+  console.log("Testing shuffle function");
   console.log("Checking that shuffle function is valid (test subject to fail in less the 1% of cases)");
   var testShuffle = [];
   //Generate a deck of values 0-99
@@ -549,7 +548,6 @@ function run_tests(){
     testShuffle.push(i);
   }
   var baseString = testShuffle.sort().toString();
-  
   console.log("Shuffling deck of values 0-99 a thousand times, checking for repeated "); 
   //Shuffle 1000 times, ensuring no repeats
   seen = [];
@@ -566,7 +564,45 @@ function run_tests(){
   }
   console.log("Shuffle function successful");
 
+  console.log("");
 
+  console.log("Testing startGame function");
+  //populate player list with data to avoid issues
+  game.players = [0, 1, 2, 3]        
+  
+  startGame();                      
+  
+  //Check game state, ensuring valid
+
+  //Ensure game players are unchanged
+  assert(game.players.length == 4);
+  for (var i = 0; i < game.players.length; i++){
+    assert(game.players[i] == i);
+  }
+
+  //Ensure players have been dealt cards
+  for (var i = 0; i < game.players.length; i++){
+    assert(game.playerHands[i] > 0 && game.playerHands[i] < 9);  
+  }
+
+  //Ensure current player is the first
+  assert(game.currentPlayer == game.players[0]);
+
+  //Ensure a deck is left with 11 cards
+  assert(game.deck.length == 11);
+
+  //Ensure the display deck is unchanged
+  for (var i = 1; i <= 8; i++){
+    assert(game.display_deck[i] == display_deck[i]);  
+  }
+
+  //Ensure the last played card is set
+  assert(game.last_played.length == 4);
+  for (var i = 0; i < game.players.length; i++){
+    assert(game.last_played[0] == 0);
+  }
+  console.log("startGame function successful");
+  
   console.log("Tests concluded.");
 }
 
