@@ -7,6 +7,8 @@
         <script src="/socket.io/socket.io.js"></script>
         <script>
             var socket = io('/play');
+            var cardLastClicked;
+            var otherPlayerCard;
 
             socket.on('update', function(data){
                 document.getElementById("status").innerHTML = data + ' User(s) connected<br>';
@@ -40,7 +42,7 @@
                 card.setAttribute("class","card");
                 var card_body = document.createElement("div")
                 card_body.setAttribute("class","card-body");
-
+                card_body.setAttribute("onclick","saveInfo(this)");
                 var cardTitle = document.createElement("h5");
                 var cardImage = document.createElement("img");
                 var cardText = document.createElement("p");
@@ -51,7 +53,7 @@
 
                 //add temporary placeholder image for the card
                 cardImage.setAttribute("src","/images/frame-landscape.png")
-                cardImage.style.width = "10em";
+                cardImage.style.width = "60%";
                 cardImage.style.height = "10em";
                 //edit what's in the text section of the card
                 cardText.style.color = "black";
@@ -93,6 +95,7 @@
                 cardData.setAttribute("class","card");
                 var card_body = document.createElement("div")
                 card_body.setAttribute("class","card-body");
+                card_body.setAttribute("onclick","saveInfo(this)");
 
                 var cardTitle = document.createElement("h5");
                 var cardImage = document.createElement("img");
@@ -102,7 +105,7 @@
                 cardTitle.innerHTML = card.name;
 
                 cardImage.setAttribute("src","/images/frame-landscape.png")
-                cardImage.style.width = "10em";
+                cardImage.style.width = "75%";
                 cardImage.style.height = "10em";
                 cardText.style.color = "black";
                 // cardText.appendChild(text);
@@ -130,7 +133,41 @@
                 document.getElementById("playbutton").style.visibility = "hidden";
                 document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
                 // place holder
-                socket.emit('play card', 8,1);
+                socket.emit('play card', cardLastClicked, 1);
+
+            }
+
+            function saveInfo(card) {
+                cardChildren = card.childNodes;
+                switch (cardChildren[0].innerHTML) {
+                    case "Built Environment":
+                        cardLastClicked = 1;
+                        break;
+                    case "Arts":
+                        cardLastClicked = 2;
+                        break;
+                    case "Law":
+                        cardLastClicked = 3;
+                        break;
+                    case "Medicine":
+                        cardLastClicked = 4;
+                        break;
+                    case "Science":
+                        cardLastClicked = 5;
+                        break;
+                    case "Engineering":
+                        cardLastClicked = 6;
+                        break;
+                    case "Business":
+                        cardLastClicked = 7;
+                        break;
+                    default:
+                        cardLastClicked = 8;
+                }       
+
+                // save other card
+                // first, we need to check if card1 or card2 was clicked
+                
 
             }
 

@@ -149,9 +149,16 @@ h1, h2, h3, h4, h5, h6 {
 
 .card{
 	width:75%;
+	height:100%;
 	margin-right: auto;
     margin-left: auto;
+    transition: all 0.5s;
 }
+.card:hover {
+	transform: scale(1.03);
+	box-shadow: 0.5px 4px 4px black;
+}
+
 
 #gamewindow > .game > .row {
 	padding-top:3%;
@@ -196,6 +203,4 @@ h1, h2, h3, h4, h5, h6 {
       0.9em 0 0 white;}
   }
 
-#gamewindow > .col-lg-12 > .row {
-	/*height: 75%;*/
-}
+
