@@ -42,7 +42,7 @@
                 card.setAttribute("class","card");
                 var card_body = document.createElement("div")
                 card_body.setAttribute("class","card-body");
-                card_body.setAttribute("onclick","saveInfo(this)");
+                
                 var cardTitle = document.createElement("h5");
                 var cardImage = document.createElement("img");
                 var cardText = document.createElement("p");
@@ -93,9 +93,10 @@
                 // }
                 var cardData = document.createElement("div");
                 cardData.setAttribute("class","card");
+                cardData.setAttribute("onclick","saveInfo(this)");
                 var card_body = document.createElement("div")
                 card_body.setAttribute("class","card-body");
-                card_body.setAttribute("onclick","saveInfo(this)");
+                
 
                 var cardTitle = document.createElement("h5");
                 var cardImage = document.createElement("img");
@@ -116,6 +117,9 @@
                 cardData.appendChild(card_body);
 
                 card2.appendChild(cardData)
+
+                // only allow current player be able to click anything
+                document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
             });
 
             function copyToClipboard() {
@@ -133,13 +137,14 @@
                 document.getElementById("playbutton").style.visibility = "hidden";
                 document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
                 // place holder
-                socket.emit('play card', cardLastClicked, 1);
+                socket.emit('play card', cardLastClicked, otherPlayerCard);
 
             }
 
             function saveInfo(card) {
                 cardChildren = card.childNodes;
-                switch (cardChildren[0].innerHTML) {
+                cardGrandChildren = cardChildren[0].childNodes;
+                switch (cardGrandChildren[0].innerHTML) {
                     case "Built Environment":
                         cardLastClicked = 1;
                         break;
@@ -167,6 +172,91 @@
 
                 // save other card
                 // first, we need to check if card1 or card2 was clicked
+                // get grandparent
+                parent = card.parentNode;
+                grandparent = parent.parentNode;
+
+                if (parent.id == "card1") {
+                    //card1 was clicked, set otherPlayerCard to data of card2
+                    card2 = document.getElementById("card2");
+                    // 
+                    card2Child = card2.childNodes;
+                    grandchild = card2Child[0].childNodes;
+
+                    switch ((grandchild[0].childNodes)[0].innerHTML) {
+                        case "Built Environment":
+                            otherPlayerCard = 1;
+                            break;
+                        case "Arts":
+                            otherPlayerCard = 2;
+                            break;
+                        case "Law":
+                            otherPlayerCard = 3;
+                            break;
+                        case "Medicine":
+                            otherPlayerCard = 4;
+                            break;
+                        case "Science":
+                            otherPlayerCard = 5;
+                            break;
+                        case "Engineering":
+                            otherPlayerCard = 6;
+                            break;
+                        case "Business":
+                            otherPlayerCard = 7;
+                            break;
+                        default:
+                            otherPlayerCard = 8;
+
+                    }
+                    // card.active();
+                    // add active class
+                    card.classList.add("active");
+                    // remove active calss of other card if it exists
+                    card2 = document.getElementById("card2");
+                    if (card2.childNodes[0].classList.contains("active")) {
+                        card2.childNodes[0].classList.remove("active");
+                    }
+                } else {
+                    //card1 was clicked, set otherPlayerCard to data of card1
+                    card1 = document.getElementById("card1");
+                    // 
+                    card1Child = card1.childNodes;
+                    grandchild = card1Child[0].childNodes;
+
+                    switch ((grandchild[0].childNodes)[0].innerHTML) {
+                        case "Built Environment":
+                            otherPlayerCard = 1;
+                            break;
+                        case "Arts":
+                            otherPlayerCard = 2;
+                            break;
+                        case "Law":
+                            otherPlayerCard = 3;
+                            break;
+                        case "Medicine":
+                            otherPlayerCard = 4;
+                            break;
+                        case "Science":
+                            otherPlayerCard = 5;
+                            break;
+                        case "Engineering":
+                            otherPlayerCard = 6;
+                            break;
+                        case "Business":
+                            otherPlayerCard = 7;
+                            break;
+                        default:
+                            otherPlayerCard = 8;
+
+                    }
+                    card.classList.add("active");
+                    // remove active calss of other card if it exists
+                    card1 = document.getElementById("card1");
+                    if (card1.childNodes[0].classList.contains("active")) {
+                        card1.childNodes[0].classList.remove("active");
+                    }
+                }
                 
 
             }
