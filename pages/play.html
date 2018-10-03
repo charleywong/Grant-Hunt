@@ -12,7 +12,6 @@
 				var uid = sessionStorage.getItem('gameUniqueId');
 				if(uid == null){
 					console.log("no session storage found, creating new ID");
-					console.lo
 					var randomlyGeneratedUID = Math.random().toString(36).substring(3,16) + +new Date;
 					sessionStorage.setItem('gameUniqueId', randomlyGeneratedUID);
 				} else {

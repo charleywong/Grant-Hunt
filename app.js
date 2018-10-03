@@ -139,10 +139,12 @@ function startGame(){
   game.deck = newDeck();
   //every player draws one card
   while(i < game.players.length){
-    var card = game.deck.pop();
-    game.playerHands[i] = card;
-    game.last_played.push(0);
-    play.to(game.players[i]).emit('start game', card);
+    if(game.players[i] != -1){
+      var card = game.deck.pop();
+      game.playerHands[i] = card;
+      game.last_played.push(0);
+      play.to(game.players[i]).emit('start game', card);
+    }
     i++;
   }
   //draw a card for player 0
@@ -456,6 +458,7 @@ function removePlayerBySId(data){
   if(gameIndex > -1){
     //hand of -1 indicates the player has left
     game.players[gameIndex] = -1;
+    game.playerHands[gameIndex] = -1;
   }
   if(userIndex > -1){
     users.splice(userIndex, 1);
