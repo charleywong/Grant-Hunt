@@ -7,6 +7,19 @@
         <script src="/socket.io/socket.io.js"></script>
         <script>
             var socket = io('/play');
+            
+            socket.on('registration request', function(){
+				var uid = sessionStorage.getItem('gameUniqueId');
+				if(uid == null){
+					console.log("no session storage found, creating new ID");
+					console.lo
+					var randomlyGeneratedUID = Math.random().toString(36).substring(3,16) + +new Date;
+					sessionStorage.setItem('gameUniqueId', randomlyGeneratedUID);
+				} else {
+		 			console.log("session storage already found");
+			  	}
+				socket.emit('register', sessionStorage.getItem('gameUniqueId'));
+			});
 
             socket.on('update', function(data){
                 document.getElementById("status").innerHTML = data + ' User(s) connected<br>';
@@ -27,6 +40,8 @@
             });
             
             socket.on('start game', function(card){
+            
+
                 // hide share link button
                 document.getElementById("share-link").style.visibility = "hidden"
                 // get rid of loading dots
@@ -52,6 +67,8 @@
                 var gameWindow = document.getElementById("gamewindow")
                 gameWindow.appendChild(btn)
             });
+            
+
             
             // function copyToClipboard(){
             //     var copyText = document.getElementById('copy');
