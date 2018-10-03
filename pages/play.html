@@ -14,6 +14,8 @@
             var otherPlayerCard;
             var playersInGame;
             var playersInRound;
+            var playerId;
+            var allRoles = {'Built Environment': 1, 'Arts':2, 'Law':3, 'Medicine':4, 'Science':5, 'Engineering':6, 'Business':7, 'UNSW':8}
 
             socket.on('registration request', function(){
 				var uid = sessionStorage.getItem('gameUniqueId');
@@ -97,9 +99,10 @@
 
             });
             
-            socket.on('remaining players', function(remainingPlayersInGame, remainingPlayersInRound){
-                console.log(remainingPlayersInGame);
-                console.log(remainingPlayersInRound);
+            socket.on('remaining players', function(remainingPlayersInGame, remainingPlayersInRound, pId){
+                playersInGame = remainingPlayersInGame;
+                playersInRound = remainingPlayersInRound;
+                playerId = pId;
             });
             
             socket.on('your turn', function(currentPlayer, card){
@@ -111,7 +114,7 @@
 
                 // var card1 = document.getElementById("card1").childNodes;
                 var card2 = document.getElementById("card2");
-                
+
                 var cardData = document.createElement("div");
                 cardData.setAttribute("class","card");
                 var card_body = document.createElement("div")
@@ -155,7 +158,6 @@
                 document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
                 // place holder
                 cardLastClicked = 1;
-                console.log(cardLastClicked);
                 socket.emit('play card', cardLastClicked, 1);
                 if(cardLastClicked == 1){
                     builtEnvironment();
@@ -165,7 +167,68 @@
             function builtEnvironment(){
                 console.log("I'm here");
                 $('#gameModal').modal('show');
-                
+                document.getElementById('modal-title').innerHTML = "You've played Built Environment";
+                document.getElementById('information').innerHTML = "Guess the name of a card in your opponent's hand to knock them out of the round";
+                //Append players
+                var playersLabel = document.createElement("label");
+                document.getElementById('modal-body').appendChild(playersLabel);
+                playersLabel.setAttribute("for", "playerSelect");
+                playersLabel.innerHTML = "Select a player:";
+                var players = document.createElement("select");
+                document.getElementById('modal-body').appendChild(players);
+                players.setAttribute("id", "playerSelect");
+                players.setAttribute("name", "playerSelect");
+                players.setAttribute("class", "form-control");
+                for (var p in playersInRound){
+                    if(p != playerId){
+                        //create an <option> to add the <select>
+                        var child = document.createElement("option");
+                        //assign values to the <option>
+                        child.textContent = p
+                        child.value = playersInRound[p];
+                        //attach the mew <option> to the <selection>
+                        players.appendChild(child);
+                    }
+                    
+                }
+                //Append roles
+                var roleLabel = document.createElement("label");
+                document.getElementById('modal-body').appendChild(roleLabel);
+                roleLabel.setAttribute("for", "roleSelect");
+                roleLabel.innerHTML = "Select a role:";
+                var roles = document.createElement("select");
+                document.getElementById('modal-body').appendChild(roles);
+                roles.setAttribute("id", "roleSelect");
+                roles.setAttribute("name", "roleSelect");
+                roles.setAttribute("class", "form-control");
+               
+                for(var role in allRoles){
+                    if(role != "Built Environment"){
+                        //create an <option> to add the <select>
+                        var child = document.createElement("option");
+                        //assign values to the <option>
+                        child.textContent = role
+                        child.value = allRoles[role];
+                        //attach the mew <option> to the <selection>
+                        roles.appendChild(child);
+                    }
+                }
+            }
+
+            function submitModal(){
+                switch (cardLastClicked){
+                    case 1: 
+                    //Built environment: get the values from both selects and send to backend
+                        var r = document.getElementById("roleSelect");
+                        var role = r.options[r.selectedIndex].value;
+                        var p = document.getElementById("playerSelect");
+                        var player = p.options[p.selectedIndex].value;
+                        socket.emit('target-player', player, cardLastClicked, role);
+                        break;
+                    default:
+                        break;
+               }
+                    
             }
 
             function saveInfo(card) {
@@ -300,18 +363,18 @@
             <div class="modal-content">
                 <!-- Modal Header -->
                 <div class="modal-header">
-                    <h4 class="modal-title">Modal Heading</h4>
+                    <h4 class="modal-title" id="modal-title"></h4>
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 
                 <!-- Modal body -->
-                <div class="modal-body">
+                <div class="modal-body" id="modal-body">
                     <p id="information"></p>
                 </div>
                 
                 <!-- Modal footer -->
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                    <a class="button-full" data-dismiss="modal" id="modal-submit" onClick="submitModal()">Submit</a>
                 </div>
                 
             </div>
