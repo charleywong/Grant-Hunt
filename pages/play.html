@@ -12,6 +12,19 @@
             var socket = io('/play');
             var cardLastClicked;
             var otherPlayerCard;
+            
+            socket.on('registration request', function(){
+				var uid = sessionStorage.getItem('gameUniqueId');
+				if(uid == null){
+					console.log("no session storage found, creating new ID");
+					console.lo
+					var randomlyGeneratedUID = Math.random().toString(36).substring(3,16) + +new Date;
+					sessionStorage.setItem('gameUniqueId', randomlyGeneratedUID);
+				} else {
+		 			console.log("session storage already found");
+			  	}
+				socket.emit('register', sessionStorage.getItem('gameUniqueId'));
+			});
 
             socket.on('update', function(data){
                 if(document.getElementById("status")){
@@ -124,6 +137,16 @@
 
                 card2.appendChild(cardData)
             });
+
+            
+
+            
+            // function copyToClipboard(){
+            //     var copyText = document.getElementById('copy');
+            //     copyText.select();
+            //     document.execCommand("copy");
+            //     // alert(copyText.value);
+            // }
 
             function copyToClipboard() {
                 var textArea = document.createElement("textarea")

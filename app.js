@@ -12,14 +12,14 @@ var usercount = 0;
 /**
 Card list:
 0: Empty Card!
-1: Guard		Built Environment		(5 copies)
-2: Priest		Arts					(2 copies)
-3: Baron		Law						(2 copies)
-4: Handmaiden	Medicine				(2 copies)
-5: Prince		Science					(2 copies)
-6: King			Engineering				(1 copy)
-7: Countess		Business				(1 copy)
-8: Princess		UNSW					(1 copy)
+1: Guard    Built Environment   (5 copies)
+2: Priest   Arts          (2 copies)
+3: Baron    Law           (2 copies)
+4: Handmaiden Medicine        (2 copies)
+5: Prince   Science         (2 copies)
+6: King     Engineering       (1 copy)
+7: Countess   Business        (1 copy)
+8: Princess   UNSW          (1 copy)
 **/
 var deck = [1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8];
 var display_deck = {1:5, 2:2, 3:2, 4:2, 5:2, 6:1, 7:1, 8:1};
@@ -39,10 +39,12 @@ var game =  { players: [],
               display_deck: display_deck,
               last_played: []
             };
+            
+var users = [];
 
 if(process.argv.length > 2) {
-	run_tests();
-	return;
+  run_tests();
+  return;
 }
 
 app.use(express.static(__dirname + '/assets'));
@@ -64,39 +66,53 @@ app.get('/rules', function(req, res){
 });
 
 play.on('connection', function(socket){
-  //keep track of how many users are connected
-  usercount++;
+  console.log("incoming connection from " + socket.id);
+
+  socket.emit('registration request');
   
-  //if there's less than 4 players, they're added to the player room
-  //otherwise they're added to the non player room
-  console.log("A user has joined.");
-  if(game.players.length < 4){
-    console.log("Player added to players group.");
-  	game.players.push(socket.id);
-  	socket.join('players');
-  	if(game.players.length == 4){
-  	  startGame();
-  	  
-  	} else {
-  	  play.to('players').emit('player update', 4 - usercount);
-  	}
-  } else {
-    console.log("Player added to nonplayers group.");
-  	socket.join('nonplayers');
-  	play.to('nonplayers').emit('nonplayer update', usercount - 4);
-  }
-  
-  //update the page to show how many users are connected
-  play.emit('update', usercount);
+  socket.on('register', function (data) {
+    console.log("incoming registration from " + socket.id);
+    if (data !== null) {
+      //there was something in localstorage
+      var index = getUserByUId(data);
+      if (index != -1) {
+        console.log("user reconnected");
+        users[index].disconnected = false;
+        var sid = users[index].socketID;
+        var gameIndex = getPlayerBySId(sid);
+        if(gameIndex != -1){
+          game.players[gameIndex] = socket.id;
+          socket.join('players');
+          play.to(socket.id).emit('player update', 4 - users.length);
+        } else {
+          socket.join('nonplayers');
+          play.to(socket.id).emit('nonplayer update', users.length - 4);
+        }
+        users[index].socketID = socket.id;
+         play.to(socket.id).emit('update', users.length);
+      } else {
+        addNewUser(data, socket);
+      }
+    } else {
+      console.log("error, user joined with no ID");
+    }
+  });
   
   socket.on('disconnect', function(){
-  	//on disconnect, decrement the user count, remove them from rooms and update
-  	usercount--;
-  	var index = game.players.indexOf(socket.id);
-    if (index > -1) {
-      game.players.splice(index, 1);
-    }
-    play.emit('update', usercount);
+    var gind = getPlayerBySId(socket.id);
+    console.log("Disconnect detected, starting timeout. User is player " + gind + ".");
+    var index = getUserBySId(socket.id);
+    if(index == -1) return;
+    users[index].disconnected = true;
+    setTimeout(function () {
+      if (users[index].disconnected){
+        console.log("User timed out.");
+        //on disconnect, decrement the user count, remove them from rooms and update
+        removePlayerBySId(socket.id);
+        play.emit('update', users.length);
+      }
+    }, 10000);
+    
   });
   
   socket.on('play card', function(playedCard, otherCard){
@@ -106,6 +122,8 @@ play.on('connection', function(socket){
   socket.on('target player', function(targetPlayer, playedCard, guessedCard){
     turnPhaseTwo(targetPlayer, playedCard, guessedCard)
   });
+  
+
   
   
 });
@@ -139,11 +157,11 @@ function shuffle(deck){
   var r;
   while (0 !== currIndex){
     r = Math.floor(Math.random() * currIndex);
-    currIndex--;	  
-	
-  	temp = deck[r];
-  	deck[r] = deck[currIndex];
-  	deck[currIndex] = temp;
+    currIndex--;    
+  
+    temp = deck[r];
+    deck[r] = deck[currIndex];
+    deck[currIndex] = temp;
   }
   return deck;
 }
@@ -213,18 +231,30 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
 function nextTurn(){
   //maybe we can add a check for game end function here?
   //Seems reasonable to do since game end is always checked right after a player's turn
+   check_end_game();
    
   var id = game.currentPlayer;
   //move on to the next player without an empty hand
   id = (id + 1) % 4;
-  while(game.playerHands[id] == 0){
+  while(game.playerHands[id] <= 0){
     id = (id + 1) % 4;
   }
   
   //player draws a card
   var newCard = game.deck.pop();
   play.to(game.players[id]).emit('your turn', id, cardInfo(game.playerHands[id]), cardInfo(newCard));
-  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played);
+  var remainingPlayersInRound = [];
+  var remainingPlayersInGame = [];
+  for(var i = 0; i < game.players.length; i++){
+    if(playerHands[i] != -1){
+      remainingPlayersInGame.push(i);
+    }
+    
+    if(playerHands[i] > 0){
+      remainingPlayersInRound.push(i);
+    }
+  }
+  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played, remainingPlayersInRound, remainingPlayersInGame);
   game.currentPlayer = id;
 }
 
@@ -354,10 +384,10 @@ function cardInfo(cardID){
       card.name = "Empty";
       card.description = "You don't have a card!"
       break;
-	case 1:
-	  card.name = "Built Environment";
-	  card.description = "Choose a player and guess a card. If that player is holding that card, they discard it.";
-	  break;
+  case 1:
+    card.name = "Built Environment";
+    card.description = "Choose a player and guess a card. If that player is holding that card, they discard it.";
+    break;
     case 2:
       card.name = "Arts";
       card.description = "Choose a player and view their hand.";
@@ -393,6 +423,73 @@ function cardInfo(cardID){
   return card;
 }
 
+function getUserByUId(uid){
+  for(var i = 0; i < users.length; i++){
+    if(users[i].uniqueID == uid){
+      return i;
+    }
+  }
+  return -1;
+}
+
+function getUserBySId(sid){
+  for(var i = 0; i < users.length; i++){
+    if(users[i].socketID == sid){
+      return i;
+    }
+  }
+  return -1;
+}
+
+function getPlayerBySId(sid){
+  for(var i = 0; i < game.players.length; i++){
+    if(game.players[i] == sid){
+      return i;
+    }
+  }
+  return -1;
+}
+
+function removePlayerBySId(data){
+  var gameIndex = getPlayerBySId(data);
+  var userIndex = getUserBySId(data);
+  if(gameIndex > -1){
+    //hand of -1 indicates the player has left
+    game.players[gameIndex] = -1;
+  }
+  if(userIndex > -1){
+    users.splice(userIndex, 1);
+  }
+  
+}
+
+function addNewUser(UId, socket){
+  var SId = socket.id;
+  var entry = {uniqueID: UId, socketID: SId, disconnected: false};
+  users.push(entry);
+  console.log(users);
+  //if there's less than 4 players, they're added to the player room
+  //otherwise they're added to the non player room
+  console.log("A user has joined.");
+  if(game.players.length < 4){
+    console.log("Player added to players group.");
+    game.players.push(socket.id);
+    socket.join('players');
+    if(game.players.length == 4){
+      startGame();
+      
+    }
+    play.to('players').emit('player update', 4 - users.length);
+  } else {
+    console.log("Player added to nonplayers group.");
+    socket.join('nonplayers');
+    play.to('nonplayers').emit('nonplayer update', users.length - 4);
+  }
+   
+  //update the page to show how many users are connected
+  play.emit('update', users.length);
+}
+
 //returns true if there are at least 2 players remaining, otherwise returns false and sets the winner using playerHands
 function remaining_players() {
   var flag = false;
@@ -415,6 +512,15 @@ function remaining_players() {
   return false;
 }
 
+//checks the state of the game to see if it has reached an end state or not
+function check_end_game() {
+  if (game.deck.length == 0) {
+    end_game();
+    return 0;//deck is empty
+  }
+
+  return remaining_players();
+}
 
 function run_tests(){
   //run every function without checking results to check for errors
@@ -423,9 +529,44 @@ function run_tests(){
   game.players = [0, 1, 2, 3] 		//populate player list with data to avoid issues
   startGame();						//start game
   
-  console.log(game);
+  console.log("Testing newDeck generated");
+  var deck = newDeck();
+  console.log("Deck Created");
 
+  console.log("Checking correct deck size");
+  assert(deck.length == 16);
+  console.log("Deck size correct");
+
+  console.log("Checking correct cards present in deck");
+  console.log(deck.sort().toString());
+  assert(deck.sort().toString() == "1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8");
+  console.log("All cards present in deck are correct");
+
+  console.log("Checking that shuffle function is valid (test subject to fail in less the 1% of cases)");
+  var testShuffle = [];
+  //Generate a deck of values 0-99
+  for (var i = 0; i < 100; i++){
+    testShuffle.push(i);
+  }
+  var baseString = testShuffle.sort().toString();
   
+  console.log("Shuffling deck of values 0-99 a thousand times, checking for repeated "); 
+  //Shuffle 1000 times, ensuring no repeats
+  seen = [];
+  for (var i = 0; i < 10000; i++){
+    var shuffleResult = shuffle(testShuffle);
+    //Check length is same
+    assert(shuffleResult.length == 100);
+    //Check that all elements are same
+    assert(shuffleResult.sort().toString() == baseString);
+    //Check this permutation isnt already existing
+    assert(!seen.includes(shuffleResult.toString())); 
+    //Add permutation to seen
+    seen.push(shuffleResult);
+  }
+  console.log("Shuffle function successful");
+
+
   console.log("Tests concluded.");
 }
 
