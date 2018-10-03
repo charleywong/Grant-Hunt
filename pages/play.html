@@ -1,8 +1,11 @@
 <!doctype html>
 <html>
     <head>
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
         <link rel="stylesheet" type="text/css" href="/styles/custom.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
         <title>Grant Hunt</title>
         <script src="/socket.io/socket.io.js"></script>
         <script>
@@ -11,7 +14,9 @@
             var otherPlayerCard;
 
             socket.on('update', function(data){
-                document.getElementById("status").innerHTML = data + ' User(s) connected<br>';
+                if(document.getElementById("status")){
+                    document.getElementById("status").innerHTML = data + ' User(s) connected<br>';
+                }
             });
             
             socket.on('player update', function(data){
@@ -23,7 +28,9 @@
             });
             
             socket.on('nonplayer update', function(data){
-                document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
+                if(document.getElementById("waitingstatus")){
+                    document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
+                }
             });
             
             socket.on('start game', function(data){
@@ -133,8 +140,18 @@
                 document.getElementById("playbutton").style.visibility = "hidden";
                 document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
                 // place holder
+                cardLastClicked = 1;
+                console.log(cardLastClicked);
                 socket.emit('play card', cardLastClicked, 1);
+                if(cardLastClicked == 1){
+                    console.log("help cardLastClicked");
+                    builtEnvironment();
+                }
+            }
 
+            function builtEnvironment(){
+                console.log("I'm here");
+                $('#myModal').modal('show');
             }
 
             function saveInfo(card) {
@@ -246,9 +263,12 @@
                         <div class="col-lg-12" id="turnend">
                             <a class="button" id="playbutton" onclick="endTurn()" style="visibility: hidden;">Play Card</a>
                         </div>
+                        
                     </div>
-                </div> 
+                    
             </div>
+
+            
             <!-- option 1 -->
             
             <!-- option 2 -->
@@ -260,6 +280,28 @@
             </div> -->
         </div>
     </header>
-    
+    <!-- Modal -->
+    <div class="modal" id="myModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title">Modal Heading</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                
+                <!-- Modal body -->
+                <div class="modal-body">
+                    Modal body..
+                </div>
+                
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
     </body>
 </html>
