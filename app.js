@@ -272,7 +272,7 @@ function get_hand(id) {
 }
 
 function played_card(id, card, otherCard) {
-  if ((otherCard == 5 || otherCard == 6) && game.playerHands[id].includes(7)) {
+  if ((game.playerHands[id].includes(5) || game.playerHands[id].includes(6)) && game.playerHands[id].includes(7)) {
     if (card == 7) return 0;
     else return 7;//player must discard countess
   }
@@ -519,6 +519,17 @@ function check_end_game() {
   return remaining_players();
 }
 
+//Set dummy values for the game
+function setDummy(){  
+  game.players = [0,1,2,3]; 
+  game.playerHands = [[1],[1],[1],[1]];
+  game.currentPlayer = 0;
+  game.deck = [2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8];
+  game.display_deck = display_deck;
+  game.last_played = [0];
+}
+
+//Test Suite
 function run_tests(){
   //run every function without checking results to check for errors
 
@@ -533,7 +544,6 @@ function run_tests(){
   assert(deck.length == 16);
   console.log("Deck size correct");
   console.log("Checking correct cards present in deck");
-  console.log(deck.sort().toString());
   assert(deck.sort().toString() == "1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8");
   console.log("All cards present in deck are correct");
   console.log("newDeck function successful");
@@ -602,8 +612,73 @@ function run_tests(){
     assert(game.last_played[0] == 0);
   }
   console.log("startGame function successful");
+
+  console.log("");
+
+  console.log("Testing playedCard function");
   
+  setDummy();
+  // Perform an action based on card
+  // played_card(id, card, otherCard);
+  //
+  // 1: Guard       Built Environment   return 1 to pick a player
+  // 2: Priest      Arts                return 1 to pick a player
+  // 3: Baron       Law                 return 1 to pick a player
+  // 4: Handmaiden  Medicine            return 0 to proceed with game
+  // 5: Prince      Science             return 5 to pick a player including self
+  // 6: King        Engineering         return 1 to pick a player
+  // 7: Countess    Business            return 0 or 7 to proceed
+  // 8: Princess    UNSW                return 8 to show you are knocked out
+  // If final card,                     return -1 to end game
+
+  //Check playing Built Environment is correct 
+  assert(played_card(0, 1, 1) == 1);
+
+  //Check playing Arts is correct 
+  assert(played_card(0, 2, 1) == 1);
+
+  //Check playing Law is correct 
+  assert(played_card(0, 3, 1) == 1);
+
+  //Check playing Medicene is correct 
+  assert(played_card(0, 4, 1) == 0);
+
+  //Check playing Science is correct 
+  assert(played_card(0, 5, 1) == 5);
+
+  //Check playing Engineering is correct
+  assert(played_card(0, 6, 1) == 1);
+
+  //Check playing Countess
+  //If you play 7 on a valid choice
+  game.playerHands[0] = [7, 5];
+  assert(played_card(0, 7, 5) == 0);
+
+  game.playerHands[0] = [7, 4];
+  assert(played_card(0, 7, 4) == 0);
+
+  //If you play 7 on invalid play
+  game.playerHands[0] = [7, 5];
+  assert(played_card(0, 5, 7) == 7);
+
+  game.playerHands[0] = [7, 6];
+  assert(played_card(0, 6, 7) == 7);
+
+  //Check playing Princess
+  game.playerHands[0] = [8, 1];
+  assert(played_card(0, 8, 1) == 8);
+  assert(game.playerHands[0] == 0);
+
+  //Check if last card is played, game ends
+  setDummy();
+  game.deck = [];
+  assert(played_card(0, 1, 1) == -1);
+
+
+  console.log("playedCard function successful");
+
+  console.log("");
+
   console.log("Tests concluded.");
 }
-
 
