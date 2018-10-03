@@ -236,14 +236,25 @@ function nextTurn(){
   var id = game.currentPlayer;
   //move on to the next player without an empty hand
   id = (id + 1) % 4;
-  while(game.playerHands[id] == 0){
+  while(game.playerHands[id] <= 0){
     id = (id + 1) % 4;
   }
   
   //player draws a card
   var newCard = game.deck.pop();
   play.to(game.players[id]).emit('your turn', id, cardInfo(game.playerHands[id]), cardInfo(newCard));
-  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played);
+  var remainingPlayersInRound = [];
+  var remainingPlayersInGame = [];
+  for(var i = 0; i < game.players.length; i++){
+    if(playerHands[i] != -1){
+      remainingPlayersInGame.push(i);
+    }
+    
+    if(playerHands[i] > 0){
+      remainingPlayersInRound.push(i);
+    }
+  }
+  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played, remainingPlayersInRound, remainingPlayersInGame);
   game.currentPlayer = id;
 }
 
@@ -443,7 +454,8 @@ function removePlayerBySId(data){
   var gameIndex = getPlayerBySId(data);
   var userIndex = getUserBySId(data);
   if(gameIndex > -1){
-    game.players.splice(gameIndex, 1);
+    //hand of -1 indicates the player has left
+    game.players[gameIndex] = -1;
   }
   if(userIndex > -1){
     users.splice(userIndex, 1);
