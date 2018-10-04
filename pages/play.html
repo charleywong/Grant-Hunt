@@ -245,7 +245,12 @@
                 while (cardToRemove.firstChild) {
                     cardToRemove.removeChild(cardToRemove.firstChild);
                 }
-
+                socket.emit('play card', playedCard, otherCard);
+                console.log(playedCard);
+                console.log(otherCard);
+                if(playedCard == 1){
+                    builtEnvironment();
+                }
             }
 
             function builtEnvironment(){
@@ -297,6 +302,7 @@
                         roles.appendChild(child);
                     }
                 }
+                
             }
 
             function submitModal(){
