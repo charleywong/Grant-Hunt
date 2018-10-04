@@ -105,7 +105,7 @@
                 playerId = pId;
             });
             
-            socket.on('your turn', function(currentPlayer, c2, card){
+            socket.on('your turn', function(currentPlayer, card1, card){
                 document.getElementById("turnstatus").innerHTML = "It's your turn!";
 
                 // only show the end turn button if it's the current player's turn
