@@ -6,7 +6,7 @@
   "scripts": {
     "start": "pm2 start app.js",
     "stop": "pm2 kill",
-    "restart":"pm2 flush && npm stop && npm start"
+    "restart": "pm2 flush && npm stop && npm start"
   },
   "repository": {
     "type": "git",
