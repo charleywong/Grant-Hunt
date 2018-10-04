@@ -147,7 +147,7 @@ function startGame(){
   }
   //draw a card for player 0
   var newCard = game.deck.pop();
-  play.to(game.players[0]).emit('your turn', game.currentPlayer, cardInfo(newCard));
+  play.to(game.players[0]).emit('your turn', game.currentPlayer, cardInfo(game.playerHands[0]) ,cardInfo(newCard));
   console.log("New game started. It is player 0's turn. SocketID: " + game.players[0]);
   playersInGame();
 }
@@ -276,8 +276,9 @@ function nextTurn(){
       remainingPlayersInRound.push(i);
     }
   }
-  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played, remainingPlayersInRound, remainingPlayersInGame);
   game.currentPlayer = id;
+  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played, remainingPlayersInRound, remainingPlayersInGame);
+  
   remainingPlayersInGame();
 }
 
