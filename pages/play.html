@@ -313,7 +313,7 @@
                         var role = r.options[r.selectedIndex].value;
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
-                        socket.emit('target-player', player, cardLastClicked, role);
+                        socket.emit('target player', player, cardLastClicked, role);
                         break;
                     default:
                         break;
