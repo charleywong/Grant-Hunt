@@ -65,7 +65,7 @@
                 card.setAttribute("class","card");
                 var card_body = document.createElement("div")
                 card_body.setAttribute("class","card-body");
-                card_body.setAttribute("onclick","saveInfo(this)");
+                
                 var cardTitle = document.createElement("h5");
                 var cardImage = document.createElement("img");
                 var cardText = document.createElement("p");
@@ -105,7 +105,7 @@
                 playerId = pId;
             });
             
-            socket.on('your turn', function(currentPlayer, card){
+            socket.on('your turn', function(currentPlayer, card1, card){
                 document.getElementById("turnstatus").innerHTML = "It's your turn!";
 
                 // only show the end turn button if it's the current player's turn
@@ -117,9 +117,10 @@
 
                 var cardData = document.createElement("div");
                 cardData.setAttribute("class","card");
+                cardData.setAttribute("onclick","saveInfo(this)");
                 var card_body = document.createElement("div")
                 card_body.setAttribute("class","card-body");
-                card_body.setAttribute("onclick","saveInfo(this)");
+                
 
                 var cardTitle = document.createElement("h5");
                 var cardImage = document.createElement("img");
@@ -129,7 +130,7 @@
                 cardTitle.innerHTML = card.name;
 
                 cardImage.setAttribute("src","/images/frame-landscape.png")
-                cardImage.style.width = "75%";
+                cardImage.style.width = "60%";
                 cardImage.style.height = "10em";
                 cardText.style.color = "black";
                 // cardText.appendChild(text);
@@ -140,6 +141,9 @@
                 cardData.appendChild(card_body);
 
                 card2.appendChild(cardData)
+
+                // only allow current player be able to click anything
+                document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
             });
 
             function copyToClipboard() {
@@ -154,12 +158,97 @@
             }
 
             function endTurn() {
+                if (!cardLastClicked && !otherPlayerCard) {
+                    // player has not selected anything
+                    // let player know that they cannot proceed until they select a card
+                    alert("You cannot proceed until you have chosen a card to play");
+                    return;
+                }
                 document.getElementById("playbutton").style.visibility = "hidden";
                 document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
-                // place holder
-                cardLastClicked = 1;
-                socket.emit('play card', cardLastClicked, 1);
-                if(cardLastClicked == 1){
+
+                // cardLastClicked stores:
+                // {
+                //     "name":"..",
+                //     "cardNum":".."
+                // }
+
+                var playedCard;
+                var otherCard;
+                switch (cardLastClicked.name) {
+                    case "Built Environment":
+                        playedCard = 1;
+                        break;
+                    case "Arts":
+                        playedCard = 2;
+                        break;
+                    case "Law":
+                        playedCard = 3;
+                        break;
+                    case "Medicine":
+                        playedCard = 4;
+                        break;
+                    case "Science":
+                        playedCard = 5;
+                        break;
+                    case "Engineering":
+                        playedCard = 6;
+                        break;
+                    case "Business":
+                        playedCard = 7;
+                        break;
+                    default:
+                        playedCard = 8;
+                }  
+                switch (otherPlayerCard.name) {
+                    case "Built Environment":
+                        otherCard = 1;
+                        break;
+                    case "Arts":
+                        otherCard = 2;
+                        break;
+                    case "Law":
+                        otherCard = 3;
+                        break;
+                    case "Medicine":
+                        otherCard = 4;
+                        break;
+                    case "Science":
+                        otherCard = 5;
+                        break;
+                    case "Engineering":
+                        otherCard = 6;
+                        break;
+                    case "Business":
+                        otherCard = 7;
+                        break;
+                    default:
+                        otherCard = 8;
+                }
+                console.log(playedCard);
+                console.log(otherCard);
+
+                // we need to delete the card that has been chosen
+                // we use cardLastClicked.cardNum to determine which children to remove
+                // if card1 is removed, we should move card2 data over to card1 and then delete card2
+                var card2Clone;
+                if (cardLastClicked.cardNum == "card1") {
+                    card2Clone = (document.getElementById("card2").childNodes)[0].cloneNode(true);
+                    // remove card1
+                    var tempCard = document.getElementById("card1");
+                    while (tempCard.firstChild) {
+                        tempCard.removeChild(tempCard.firstChild);
+                    }
+                    card1.appendChild(card2Clone);
+                }
+                var cardToRemove = document.getElementById("card2");
+                while (cardToRemove.firstChild) {
+                    cardToRemove.removeChild(cardToRemove.firstChild);
+                }
+                socket.emit('play card', playedCard, otherCard);
+                console.log(playedCard);
+                console.log(otherCard);
+                if(playedCard == 1){
                     builtEnvironment();
                 }
             }
@@ -213,6 +302,7 @@
                         roles.appendChild(child);
                     }
                 }
+                
             }
 
             function submitModal(){
@@ -223,45 +313,63 @@
                         var role = r.options[r.selectedIndex].value;
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
-                        socket.emit('target-player', player, cardLastClicked, role);
+                        socket.emit('target player', player, cardLastClicked, role);
                         break;
                     default:
                         break;
                }
                     
             }
-
             function saveInfo(card) {
                 cardChildren = card.childNodes;
-                switch (cardChildren[0].innerHTML) {
-                    case "Built Environment":
-                        cardLastClicked = 1;
-                        break;
-                    case "Arts":
-                        cardLastClicked = 2;
-                        break;
-                    case "Law":
-                        cardLastClicked = 3;
-                        break;
-                    case "Medicine":
-                        cardLastClicked = 4;
-                        break;
-                    case "Science":
-                        cardLastClicked = 5;
-                        break;
-                    case "Engineering":
-                        cardLastClicked = 6;
-                        break;
-                    case "Business":
-                        cardLastClicked = 7;
-                        break;
-                    default:
-                        cardLastClicked = 8;
-                }       
+                cardGrandChildren = cardChildren[0].childNodes;
 
-                // save other card
+                parent = card.parentNode;
+                cardLastClicked = {
+                    "name":cardGrandChildren[0].innerHTML,
+                    "cardNum": parent.id
+                }
+
+                if (parent.id == "card1") {
+                    // other card is card2
+                    card2 = document.getElementById("card2");
+                    card2Child = card2.childNodes;
+                    grandchild = card2Child[0].childNodes;
+                    content = grandchild[0].childNodes;
+
+                    otherPlayerCard = {
+                        "name": content[0].innerHTML,
+                        "cardNum": "card2"
+                    }
+
+                } else if (parent.id == "card2") {
+                    card1 = document.getElementById("card1");
+                    card1Child = card1.childNodes;
+                    grandchild = card1Child[0].childNodes;
+
+                    otherPlayerCard = {
+                        "name": grandchild[0].innerHTML,
+                        "cardNum": "card1"
+                    }
+                }
                 // first, we need to check if card1 or card2 was clicked
-                
+
+                if (parent.id == "card1") {
+                    // add active class
+                    card.classList.add("active");
+                    // remove active calss of other card if it exists
+                    card2 = document.getElementById("card2");
+                    if (card2.childNodes[0].classList.contains("active")) {
+                        card2.childNodes[0].classList.remove("active");
+                    }
+                } else if (parent.id=="card2") {
+                    card.classList.add("active");
+                    // remove active calss of other card if it exists
+                    card1 = document.getElementById("card1");
+                    if (card1.childNodes[0].classList.contains("active")) {
+                        card1.childNodes[0].classList.remove("active");
+                    }
+                }
 
             }
 
