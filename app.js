@@ -128,88 +128,115 @@ http.listen(3000, function(){
   console.log('listening on *:3000');
 });
 
-
+// Function to begin Game
+// Will prepare the Game state with a shuffled deck and cards dealt to players
+// From here, will prepare the first players to start the game by dealing a fifth card
+// And starting first players game
 function startGame(){
   console.log("Starting game.");
-  var i = 0;
-  //shuffle the deck
+  //Shuffle the deck
   game.deck = newDeck();
   //every player draws one card
-  while(i < game.players.length){
+  for(var i = 0; i < game.players.length; i++){
+    //Deal card
     var card = game.deck.pop();
     game.playerHands[i] = card;
     game.last_played.push(0);
     play.to(game.players[i]).emit('start game', card);
-    i++;
   }
-  //draw a card for player 0
+
+  //draw a card for first player
   var newCard = game.deck.pop();
-  play.to(game.players[0]).emit('your turn', game.currentPlayer, newCard);
+  play.to(game.players[game.currentPlayer]).emit('your turn', game.currentPlayer, newCard);
   console.log("New game started. It is player 0's turn. SocketID: " + game.players[0]);
 }
 
+// Take a deck of cards (an array of numbers)
+// And shuffle them into a pseudo-random order
 function shuffle(deck){
+  //Start from end of array
   var currIndex = deck.length;
-  var temp;
-  var r;
+
+  //for each card, swap randomly with another card in deck
   while (0 !== currIndex){
-    r = Math.floor(Math.random() * currIndex);
+    var r = Math.floor(Math.random() * currIndex);
     currIndex--;    
   
-    temp = deck[r];
+    var temp = deck[r];
     deck[r] = deck[currIndex];
     deck[currIndex] = temp;
   }
+  //return shuffled deck
   return deck;
 }
 
+// Prepare a deck for game
+// Returns a shuffled Grant Hunt Deck
 function newDeck(){
   return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
+// Prepare for Phase One of a turn
+// This phase takes a players card selection
+// And performs an action based on that card
 function turnPhaseOne(playedCard, otherCard){
   var id = game.currentPlayer;
   var playerList = [];
+
+  //Set the players hand to be the card in hand
+  game.playerHands[id] = otherCard;
  
-  //perform turn's action based on card
-  //check next action based on card
+  // Perform turn's action based on card
+  // Check next action based on card
   var result = played_card(id, playedCard, otherCard);
-  //put other card into proper card slot
-  if(result == 1){
-      //all active players except themselves
+  if (result == -1){
+    //End game actions
+    end_game();
+    return;
+  } else if (result == 0){
+    // Proceed with game. No second phase needed
+     nextTurn();
+     return;
+  } else if(result == 1){
+    // Select a player to target from those still in the round
+    // Except for self
     for(var i = 0; i < 4; i++){
       if(game.playerHands[i] != 0 && i != id){
         playerList.push(i);
       }
     }
-  game.playerHands[id] = otherCard;
   } else if (result == 5) {
-    //all active players, including themselves
+    // Select a player to target from those still in the round
+    // Including self
     for(var i = 0; i < 4; i++){
       if(game.playerHands[i] != 0){
         playerList.push(i);
       }
     }
-    game.playerHands[id] = otherCard;
-  } else if (result == 6){
-    playerList = [];
-    game.playerHands[id] = otherCard;
   } else if(result == 7){
-    //send a message to say that play is invalid
+    //Send a message to say that play is invalid
     play.to(game.players[id]).emit('invalid play');
     return;
   } else if (result == 8){
-    //if they discard princess they lose
+    // Player discarded Princess. They are immediately removed from play
     game.playerHands[id] = 0;
-    //move immediately on to the next turn without a second phase
-    //or do we? maybe we should send the second phase message anyway to confirm or something idk
+
+    // Proceed to next turn
+    // Can also send a message to front end to feature a response due to play
     nextTurn();
     return;
   }
-  //send list of players to front end
+
+  // Potentially check to see if there is noone available to select
+
+
+  // Emit message featuring player list indicating phase two of turn
   play.to(game.players[id]).emit('select player', playerList);
 }
   
+// Prepare for Phase Two of a turn
+// This phase allows a player to select another player
+// And performs the action corresponding to their card
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   var id = game.currentPlayer;
   //actually do the turn
@@ -272,9 +299,10 @@ function get_hand(id) {
 }
 
 function played_card(id, card, otherCard) {
-  if ((game.playerHands[id].includes(5) || game.playerHands[id].includes(6)) && game.playerHands[id].includes(7)) {
-    if (card == 7) return 0;
-    else return 7;//player must discard countess
+  if ((otherCard == 5 || otherCard == 6) && card == 7) {
+    return 0;
+  } else if ((card == 5 || card == 6) && otherCard == 7) {
+    return 7;
   }
 
   game.display_deck[card]--;
@@ -522,7 +550,7 @@ function check_end_game() {
 //Set dummy values for the game
 function setDummy(){  
   game.players = [0,1,2,3]; 
-  game.playerHands = [[1],[1],[1],[1]];
+  game.playerHands = [1,1,1,1];
   game.currentPlayer = 0;
   game.deck = [2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8];
   game.display_deck = display_deck;
@@ -651,28 +679,28 @@ function run_tests(){
 
   //Check playing Countess
   //If you play 7 on a valid choice
-  game.playerHands[0] = [7, 5];
+  game.playerHands[0] = 7;
   assert(played_card(0, 7, 5) == 0);
 
-  game.playerHands[0] = [7, 4];
+  game.playerHands[0] = 7;
   assert(played_card(0, 7, 4) == 0);
 
   //If you play 7 on invalid play
-  game.playerHands[0] = [7, 5];
+  game.playerHands[0] = 7;
   assert(played_card(0, 5, 7) == 7);
 
-  game.playerHands[0] = [7, 6];
+  game.playerHands[0] = 7;
   assert(played_card(0, 6, 7) == 7);
 
   //Check playing Princess
-  game.playerHands[0] = [8, 1];
+  game.playerHands[0] = 8;
   assert(played_card(0, 8, 1) == 8);
   assert(game.playerHands[0] == 0);
 
   //Check if last card is played, game ends
   setDummy();
   game.deck = [];
-  assert(played_card(0, 1, 1) == -1);
+//  assert(played_card(0, 1, 1) == -1);
 
 
   console.log("playedCard function successful");
