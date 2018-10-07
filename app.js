@@ -228,7 +228,8 @@ function turnPhaseOne(playedCard, otherCard){
   }
 
   // Potentially check to see if there is noone available to select
-
+  // Emit a message and proceed to next turn as no players available to select?
+  //
 
   // Emit message featuring player list indicating phase two of turn
   play.to(game.players[id]).emit('select player', playerList);
@@ -239,37 +240,48 @@ function turnPhaseOne(playedCard, otherCard){
 // And performs the action corresponding to their card
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   var id = game.currentPlayer;
-  //actually do the turn
+  // Perform action based on card
+  // If the card was Built environment, check the guess
   if(playedCard == 1) {
+    // Ensure a guess was made/submited
     if(guessedCard != null){
       guessed_card(id, targetPlayer, guessedCard);
     } else {
       console.log("Error: guard played with no guessed card");
     }
   } else {
+    //Perform action as a result of play
     selected_player(id, targetPlayer, playedCard);
   }
+  // Proceed to next turn
   nextTurn();
 }
 
+// Proceed game state to next turn in game
+// Will update game state stored in system to recognise player
+// As well as draw a new card for the next player to offer them their turn
 function nextTurn(){
-  //maybe we can add a check for game end function here?
-  //Seems reasonable to do since game end is always checked right after a player's turn
-   check_end_game();
+  // Check to see if the game has reached an end state.
+  if (check_end_game() == 0) return;
    
   var id = game.currentPlayer;
+
   //move on to the next player without an empty hand
   id = (id + 1) % 4;
   while(game.playerHands[id] <= 0){
     id = (id + 1) % 4;
   }
   
+  //Should game state get updated/sent before starting new turn?
+
   //player draws a card
   var newCard = game.deck.pop();
   play.to(game.players[id]).emit('your turn', id, cardInfo(game.playerHands[id]), cardInfo(newCard));
+
+  // Update game state
   var remainingPlayersInRound = [];
   var remainingPlayersInGame = [];
-  for(var i = 0; i < game.players.length; i++){
+  for (var i = 0; i < game.players.length; i++){
     if(playerHands[i] != -1){
       remainingPlayersInGame.push(i);
     }
@@ -282,10 +294,12 @@ function nextTurn(){
   game.currentPlayer = id;
 }
 
+// Helper Function to return the remaining cards in the deck
 function remaining_cards() {
   return game.display_deck;
 }
 
+// Track the last play made within the last four turns
 function play_log(id) {
   var temp = [];
   for (var i = id+1; i - id < 4; i++) {
@@ -294,19 +308,32 @@ function play_log(id) {
   return temp;
 }
 
+// Get the card in a players hand
 function get_hand(id) {
   return game.playerHands[id];
 }
 
+// Return a flag indicating action to take based on players hand and card played
+// Return value of -1 indicates the game has ended
+// Return value of 0 indicates proceed to next turn
+// Return value of 1 indicates another player still in the round needs to be selected
+// Return value of 5 indicates that any player still in the round needs to be selected
+// Return value of 7 indicates that the play is invalid, Business must be played
+// Return value of 8 indicates that the player has played UNSW and is knocked out
 function played_card(id, card, otherCard) {
+  // Ensure the move was valid
+  // The Countess can lead to invalid moves so needs to be checked
   if ((otherCard == 5 || otherCard == 6) && card == 7) {
     return 0;
   } else if ((card == 5 || card == 6) && otherCard == 7) {
     return 7;
   }
 
+  //Update the cards visible for players
   game.display_deck[card]--;
   game.last_played[id] = card;
+
+  //Determine return value based on played card
   if (card == 1 | card == 2 | card == 3 | card == 6) {
     return 1;//indicator that prompt to select ANOTHER player should be displayed
   } else if (card == 5) {
@@ -318,59 +345,73 @@ function played_card(id, card, otherCard) {
     return 0; //no additional prompts
   }
 
+  //Why is this here...
   if (game.deck.length == 0) {
     return -1;
   }
 }
 
+// Performs action based on card played, and on the player it is played on
+// Returns values if action has further results for front end
+// Return value of selected players hand if playing a Priest
+// Returns 8 or -8 to signify which player is knocked out by a Baron
 function selected_player(id, player, card) {
   if (game.last_played[player] == 4) {
     return 0; //played handmaid last, can't be targeted
   }
 
-  if (card == 1) {
-    return 1; //dispay card list to pick from
-  } else if (card == 2) {
+  if (card == 2) {
     return game.playerHands[player]; //id of card to display to current player
   } else if (card == 3) {
+    //Determine which players hand has the larger value
     if (game.playerHands[id] < game.playerHands[player]) {
+      // Discard the players card from seen cards and set the player as knocked out
       game.display_deck[game.playerHands[id]]--;
       game.playerHands[id] = 0;
+
+      // Check if the game has ended
       if (game.deck.length == 0) {
         end_game();
       }
       //need to notify front end that player is knocked out and that the game is over
       return 8; //current player is knocked out
+
     } else if (game.playerHands[id] > game.playerHands[player]) {
+      // Discard other players card and mark them as knocked out
       game.display_deck[game.playerHands[player]]--;
       game.playerHands[player] = 0;
 
-
-
+      // Check if the game has ended
       if (game.deck.length == 0) {
         end_game();
       }
+
       //need to notify front end that player is knocked out and that the game is over
       return -8; //other player is knocked out
+
     } else {
-      //nothing happens
+      //nothing happens due to a tie
     }
   } else if (card == 5) {
+    // Cause the selected player to discard a card and draw a new card
     game.display_deck[game.playerHands[player]]--;
     game.playerHands[player] = game.deck.pop();
   } else if (card == 6) {
+    // Swap hands between current player and selected player
     var temp = game.playerHands[id];
     game.playerHands[id] = game.playerHands[player];
     game.playerHands[player] = temp;
   }
 }
 
+// Check to see if a guess is correct. If so, knock that player out
+// Returns 0 if a guess was incorrect
+// Returns -8 if a guess was correct
 function guessed_card (id, player, card) {
   if (game.deck.length == 0) {
     end_game();
   }
-  //need to notify front end if player is knocked out and that the game is over somehow!!!  
-
+  //TODO: Notify front end
 
   if (card == game.playerHands[player]) {
     game.display_deck[card]--;
@@ -380,9 +421,12 @@ function guessed_card (id, player, card) {
   return 0;
 }
 
+// Proceeds to place game into an end state
 function end_game() {
   var largest_id = [];
   var largest_card = 0;
+  // For each player, check if they are still in the game
+  // And make a list of players with the largest card value
   for (var i = 0; i < 4; i++) {
     if (game.playerHands[i] != 0) {
       if (game.playerHands[i] == largest_card) {
@@ -393,6 +437,8 @@ function end_game() {
       }
     }
   }
+  // Set playersHands to 1 if the player has won
+  // Or 0 if the player has not
   for (var i = 0; i < 4; i++) {
     if (largest_id.includes(i)) {
       game.playerHands[i] = 1;
@@ -402,6 +448,7 @@ function end_game() {
   }
 }
 
+// Return information regarding a card based on its value
 function cardInfo(cardID){
   var card = {name: "", strength: cardID, description: ""};
   switch(cardID){
@@ -448,6 +495,7 @@ function cardInfo(cardID){
   return card;
 }
 
+// Get a users in game ID based on their unique ID
 function getUserByUId(uid){
   for(var i = 0; i < users.length; i++){
     if(users[i].uniqueID == uid){
@@ -457,6 +505,7 @@ function getUserByUId(uid){
   return -1;
 }
 
+// Get a users in game ID based on their socket ID
 function getUserBySId(sid){
   for(var i = 0; i < users.length; i++){
     if(users[i].socketID == sid){
@@ -466,6 +515,7 @@ function getUserBySId(sid){
   return -1;
 }
 
+//Get a players in game ID based on their socket ID
 function getPlayerBySId(sid){
   for(var i = 0; i < game.players.length; i++){
     if(game.players[i] == sid){
@@ -474,6 +524,7 @@ function getPlayerBySId(sid){
   }
   return -1;
 }
+
 
 function removePlayerBySId(data){
   var gameIndex = getPlayerBySId(data);
