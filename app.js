@@ -89,7 +89,7 @@ play.on('connection', function(socket){
           play.to(socket.id).emit('nonplayer update', users.length - 4);
         }
         users[index].socketID = socket.id;
-         play.to(socket.id).emit('update', users.length);
+        play.to(socket.id).emit('update', users.length);
       } else {
         addNewUser(data, socket);
       }
@@ -105,21 +105,25 @@ play.on('connection', function(socket){
     if(index == -1) return;
     users[index].disconnected = true;
     setTimeout(function () {
-      if (users[index].disconnected){
-        console.log("User timed out.");
-        //on disconnect, decrement the user count, remove them from rooms and update
-        removePlayerBySId(socket.id);
-        play.emit('update', users.length);
+      if(index < users.length){
+        if (users[index].disconnected){
+          console.log("User timed out.");
+          //on disconnect, decrement the user count, remove them from rooms and update
+          removePlayerBySId(socket.id);
+          play.emit('update', users.length);
+        }
       }
     }, 10000);
     
   });
   
   socket.on('play card', function(playedCard, otherCard){
+    console.log("play card message received");
     turnPhaseOne(playedCard, otherCard);
   });
   
   socket.on('target player', function(targetPlayer, playedCard, guessedCard){
+    console.log("target player message received");
     turnPhaseTwo(targetPlayer, playedCard, guessedCard)
   });
 });
@@ -147,8 +151,9 @@ function startGame(){
 
   //draw a card for first player
   var newCard = game.deck.pop();
-  play.to(game.players[game.currentPlayer]).emit('your turn', game.currentPlayer, cardInfo(game.playerHands[id]),  cardInfo(newCard));
-  console.log("New game started. It is player 0's turn. SocketID: " + game.players[0]);
+  var id = game.currentPlayer;
+  play.to(game.players[id]).emit('your turn', game.currentPlayer, cardInfo(game.playerHands[id]),  cardInfo(newCard));
+  console.log("New game started. It is player " + id + "'s turn");
   playersInGame();
 }
 
@@ -174,7 +179,9 @@ function shuffle(deck){
 // Prepare a deck for game
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
-  return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
+  //preset deck for testing
+  return [8, 7, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1, 1, 1, 1];
+  //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
 
@@ -195,6 +202,8 @@ function playersInGame(){
     pId = p;
     play.to(game.players[p]).emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, pId);
   }
+ 
+  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played);
   
 }
 
@@ -203,6 +212,7 @@ function playersInGame(){
 // This phase takes a players card selection
 // And performs an action based on that card
 function turnPhaseOne(playedCard, otherCard){
+  console.log("Initiating turn phase one for player " + game.currentPlayer + ".");
   var id = game.currentPlayer;
   var playerList = [];
 
@@ -212,6 +222,7 @@ function turnPhaseOne(playedCard, otherCard){
   // Perform turn's action based on card
   // Check next action based on card
   var result = played_card(id, playedCard, otherCard);
+  console.log("played_card result: " + result);
   if (result == -1){
     //End game actions
     end_game();
@@ -240,28 +251,21 @@ function turnPhaseOne(playedCard, otherCard){
     //Send a message to say that play is invalid
     play.to(game.players[id]).emit('invalid play');
     return;
-  } else if (result == 8){
-    // Player discarded Princess. They are immediately removed from play
-    game.playerHands[id] = 0;
-
-    // Proceed to next turn
-    // Can also send a message to front end to feature a response due to play
-    nextTurn();
-    return;
-  }
+  } 
 
   // Potentially check to see if there is noone available to select
   // Emit a message and proceed to next turn as no players available to select?
   //
 
   // Emit message featuring player list indicating phase two of turn
-  play.to(game.players[id]).emit('select player', playerList);
+  play.to(game.players[id]).emit('select player', playedCard, playerList);
 }
   
 // Prepare for Phase Two of a turn
 // This phase allows a player to select another player
 // And performs the action corresponding to their card
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
+  console.log("Initiating turn phase one for player " + game.currentPlayer + ".");
   var id = game.currentPlayer;
   // Perform action based on card
   // If the card was Built environment, check the guess
@@ -284,6 +288,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
 // Will update game state stored in system to recognise player
 // As well as draw a new card for the next player to offer them their turn
 function nextTurn(){
+  console.log("Next turn!");
   // Check to see if the game has reached an end state.
   if (check_end_game() == 0) return;
    
@@ -296,29 +301,15 @@ function nextTurn(){
   }
   game.currentPlayer = id;
   
-  //Should game state get updated/sent before starting new turn?
-
+  //update players on who is remaining
+  playersInGame();
+  
   //player draws a card
+
   var newCard = game.deck.pop();
   play.to(game.players[id]).emit('your turn', id, cardInfo(game.playerHands[id]), cardInfo(newCard));
-
-  // Update game state
-  var remainingPlayersInRound = [];
-  var remainingPlayersInGame = [];
-  for (var i = 0; i < game.players.length; i++){
-    if(playerHands[i] != -1){
-      remainingPlayersInGame.push(i);
-    }
-    
-    if(playerHands[i] > 0){
-      remainingPlayersInRound.push(i);
-    }
-  }
-
-  game.currentPlayer = id;
-  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played, remainingPlayersInRound, remainingPlayersInGame);
   
-  remainingPlayersInGame();
+  
 }
 
 
