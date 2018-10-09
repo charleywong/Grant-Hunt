@@ -21,7 +21,8 @@
 				var uid = sessionStorage.getItem('gameUniqueId');
 				if(uid == null){
 					console.log("no session storage found, creating new ID");
-					var randomlyGeneratedUID = Math.random().toString(36).substring(3,16) + new Date;
+					var randomlyGeneratedUID = Math.random().toString(36).substring(3,16) + +new Date;
+
 					sessionStorage.setItem('gameUniqueId', randomlyGeneratedUID);
 				} else {
 		 			console.log("session storage already found");
@@ -306,13 +307,16 @@
             }
 
             function submitModal(){
-                switch (cardLastClicked){
-                    case 1: 
+            	console.log("submit modal clicked!");
+            	console.log(cardLastClicked);
+                switch (cardLastClicked.name){
+                    case "Built Environment": 
                     //Built environment: get the values from both selects and send to backend
                         var r = document.getElementById("roleSelect");
                         var role = r.options[r.selectedIndex].value;
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
+                        console.log("Emitting target player message");
                         socket.emit('target player', player, cardLastClicked, role);
                         break;
                     default:
