@@ -149,6 +149,7 @@ function startGame(){
   var newCard = game.deck.pop();
   play.to(game.players[game.currentPlayer]).emit('your turn', game.currentPlayer, cardInfo(game.playerHands[id]),  cardInfo(newCard));
   console.log("New game started. It is player 0's turn. SocketID: " + game.players[0]);
+  playersInGame();
 }
 
 // Take a deck of cards (an array of numbers)
@@ -175,6 +176,28 @@ function shuffle(deck){
 function newDeck(){
   return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
+
+
+function playersInGame(){
+
+  var remainingPlayersInRound = [];
+    var remainingPlayersInGame = [];
+    for(var i = 0; i < game.players.length; i++){
+      if(game.playerHands[i] != -1){
+        remainingPlayersInGame.push(i);
+      }
+    
+    if(game.playerHands[i] > 0){
+      remainingPlayersInRound.push(i);
+    }
+  }
+  for(var p in game.players){
+    pId = p;
+    play.to(game.players[p]).emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, pId);
+  }
+  
+}
+
 
 // Prepare for Phase One of a turn
 // This phase takes a players card selection
@@ -291,11 +314,14 @@ function nextTurn(){
       remainingPlayersInRound.push(i);
     }
   }
+
+  game.currentPlayer = id;
   play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played, remainingPlayersInRound, remainingPlayersInGame);
   
+  remainingPlayersInGame();
 }
 
-// Helper Function to return the remaining cards in the deck
+
 function remaining_cards() {
   return game.display_deck;
 }
