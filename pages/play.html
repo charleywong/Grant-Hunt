@@ -99,11 +99,11 @@
 
             });
             
-            socket.on('remaining players', function(remainingPlayersInGame, remainingPlayersInRound, pId){
-                playersInGame = remainingPlayersInGame;
-                playersInRound = remainingPlayersInRound;
-                playerId = pId;
-            });
+            // socket.on('remaining players', function(remainingPlayersInGame, remainingPlayersInRound, pId){
+            //     playersInGame = remainingPlayersInGame;
+            //     playersInRound = remainingPlayersInRound;
+            //     playerId = pId;
+            // });
             
             socket.on('your turn', function(currentPlayer, card1, card){
                 document.getElementById("turnstatus").innerHTML = "It's your turn!";
@@ -146,6 +146,7 @@
                 document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
             });
 
+
             function copyToClipboard() {
                 var textArea = document.createElement("textarea")
             
@@ -170,7 +171,8 @@
                 // cardLastClicked stores:
                 // {
                 //     "name":"..",
-                //     "cardNum":".."
+                //     "cardNum":"..",
+                //     "strength":".."
                 // }
 
                 var playedCard;
@@ -225,8 +227,8 @@
                     default:
                         otherCard = 8;
                 }
-                console.log(playedCard);
-                console.log(otherCard);
+                // console.log(playedCard);
+                // console.log(otherCard);
 
                 // we need to delete the card that has been chosen
                 // we use cardLastClicked.cardNum to determine which children to remove
@@ -246,14 +248,28 @@
                     cardToRemove.removeChild(cardToRemove.firstChild);
                 }
                 socket.emit('play card', playedCard, otherCard);
-                console.log(playedCard);
-                console.log(otherCard);
-                if(playedCard == 1){
-                    builtEnvironment();
-                }
+                // console.log(playedCard);
+                // console.log(otherCard);
+                cardLastClicked.strength = playedCard;
+                otherPlayerCard.strength = otherCard;
+                console.log(cardLastClicked.strength);
+
             }
 
-            function builtEnvironment(){
+            socket.on('select player', function(playerList) {
+                // console.log(playerList);
+                playersInRound = playerList;
+                // for (var p in playersInRound) {
+                //     console.log("p: " + p)
+                //     console.log("players in round: " +  playersInRound[p])
+                // }
+                if (cardLastClicked.strength == 1){
+                    builtEnvironment();
+                }
+            });
+
+
+            function builtEnvironment() {
                 console.log("I'm here");
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Built Environment";
@@ -269,15 +285,13 @@
                 players.setAttribute("name", "playerSelect");
                 players.setAttribute("class", "form-control");
                 for (var p in playersInRound){
-                    if(p != playerId){
-                        //create an <option> to add the <select>
-                        var child = document.createElement("option");
-                        //assign values to the <option>
-                        child.textContent = p
-                        child.value = playersInRound[p];
-                        //attach the mew <option> to the <selection>
-                        players.appendChild(child);
-                    }
+                    //create an <option> to add the <select>
+                    var child = document.createElement("option");
+                    //assign values to the <option>
+                    child.textContent = playersInRound[p];
+                    child.value = playersInRound[p];
+                    //attach the mew <option> to the <selection>
+                    players.appendChild(child);
                     
                 }
                 //Append roles
@@ -306,14 +320,15 @@
             }
 
             function submitModal(){
-                switch (cardLastClicked){
+                switch (cardLastClicked.strength) {
                     case 1: 
                     //Built environment: get the values from both selects and send to backend
                         var r = document.getElementById("roleSelect");
                         var role = r.options[r.selectedIndex].value;
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
-                        socket.emit('target player', player, cardLastClicked, role);
+                        socket.emit('target player', player, cardLastClicked.strength, role);
+                        console.log(player, cardLastClicked.strength, role)
                         break;
                     default:
                         break;
@@ -327,8 +342,9 @@
                 parent = card.parentNode;
                 cardLastClicked = {
                     "name":cardGrandChildren[0].innerHTML,
-                    "cardNum": parent.id
-                }
+                    "cardNum": parent.id,
+                    "strength": -1
+                };
 
                 if (parent.id == "card1") {
                     // other card is card2
@@ -349,8 +365,9 @@
 
                     otherPlayerCard = {
                         "name": grandchild[0].innerHTML,
-                        "cardNum": "card1"
-                    }
+                        "cardNum": "card1",
+                        "strength": -1
+                    };
                 }
                 // first, we need to check if card1 or card2 was clicked
 
