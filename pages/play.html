@@ -245,14 +245,27 @@
                 var cardToRemove = document.getElementById("card2");
                 while (cardToRemove.firstChild) {
                     cardToRemove.removeChild(cardToRemove.firstChild);
-                }
+                } 
                 socket.emit('play card', playedCard, otherCard);
-                console.log(playedCard);
-                console.log(otherCard);
-                if(playedCard == 1){
-                    builtEnvironment();
-                }
+                console.log("emitted played card:"+playedCard+","+otherCard);
+               
             }
+
+            socket.on('select player', function(playedCard, playerList){
+                console.log(playedCard);
+                switch (playedCard){
+                    case 1: 
+                        builtEnvironment();
+                        break;
+                    case 3:
+                        law(playerList);
+                        break;
+                    default:
+                        console.log("Emitting BLANK target player message");
+                        socket.emit('target player', player, cardLastClicked, null);
+                        break;
+                }
+            });
 
             function builtEnvironment(){
                 console.log("I'm here");
@@ -306,6 +319,34 @@
                 
             }
 
+            function law(playerList){
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've played Law";
+                document.getElementById('information').innerHTML = "Select an opponent and the player with the lower rank is knocked out of the round.";
+                //Append players
+                var playersLabel = document.createElement("label");
+                document.getElementById('modal-body').appendChild(playersLabel);
+                playersLabel.setAttribute("for", "playerSelect");
+                playersLabel.innerHTML = "Select a player:";
+                var players = document.createElement("select");
+                document.getElementById('modal-body').appendChild(players);
+                players.setAttribute("id", "playerSelect");
+                players.setAttribute("name", "playerSelect");
+                players.setAttribute("class", "form-control");
+                for (var p in playerList){
+                    if(p != playerId){
+                        //create an <option> to add the <select>
+                        var child = document.createElement("option");
+                        //assign values to the <option>
+                        child.textContent = p
+                        child.value = playersInRound[p];
+                        //attach the mew <option> to the <selection>
+                        players.appendChild(child);
+                    }
+                    
+                }
+            }
+
             function submitModal(){
             	console.log("submit modal clicked!");
             	console.log(cardLastClicked);
@@ -318,6 +359,13 @@
                         var player = p.options[p.selectedIndex].value;
                         console.log("Emitting target player message");
                         socket.emit('target player', player, cardLastClicked, role);
+                        break;
+                    case "Law":
+                         //Law: get the values from player select and send to backend
+                        var p = document.getElementById("playerSelect");
+                        var player = p.options[p.selectedIndex].value;
+                        console.log("Emitting target player message");
+                        socket.emit('target player', player, cardLastClicked, null);
                         break;
                     default:
                         break;
