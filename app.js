@@ -11,6 +11,8 @@ var usercount = 0;
 
 /**
 Card list:
+-1: Disconnected from game.
+
 0: Empty Card!
 1: Guard    Built Environment   (5 copies)
 2: Priest   Arts          (2 copies)
@@ -37,7 +39,8 @@ var game =  { players: [],
               currentPlayer: 0,
               deck: deck,
               display_deck: display_deck,
-              last_played: []
+              last_played: [],
+              immune: []
             };
             
 var users = [];
@@ -301,6 +304,12 @@ function nextTurn(){
   }
   game.currentPlayer = id;
   
+  //upate immunity - if we push onto the right and can only do so on a player's turn, then they should always be on the left on their turn
+  if(game.immunity[0] == id){
+    game.splice(0, 1);
+  }
+  
+  
   //update players on who is remaining
   playersInGame();
   
@@ -360,6 +369,9 @@ function played_card(id, card, otherCard) {
     game.playerHands[id] = 0;
     return 8; //player is knocked out
   } else {
+    if(card == 4){
+      game.immune.push(id);
+    }
     return 0; //no additional prompts
   }
 
