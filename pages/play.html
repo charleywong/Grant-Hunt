@@ -228,8 +228,6 @@
                     default:
                         otherCard = 8;
                 }
-                // console.log(playedCard);
-                // console.log(otherCard);
 
                 // we need to delete the card that has been chosen
                 // we use cardLastClicked.cardNum to determine which children to remove
@@ -257,13 +255,11 @@
 
             }
 
-            socket.on('select player', function(playerList) {
-                // console.log(playerList);
+            socket.on('select player', function(playerCard, playerList) {
                 playersInRound = playerList;
-                // for (var p in playersInRound) {
-                //     console.log("p: " + p)
-                //     console.log("players in round: " +  playersInRound[p])
-                // }
+                for (var p in playersInRound) {
+                    console.log("players in round: " +  playersInRound[p])
+                }
                 if (cardLastClicked.strength == 1){
                     builtEnvironment();
                 }
@@ -321,31 +317,31 @@
             }
 
             function submitModal(){
-// <<<<<<< HEAD
+
                 switch (cardLastClicked.strength) {
                     case 1: 
-// =======
-            	// console.log("submit modal clicked!");
-            	// console.log(cardLastClicked);
-                // switch (cardLastClicked.name){
-                    // case "Built Environment": 
-// >>>>>>> master
-                    //Built environment: get the values from both selects and send to backend
+
+                        //Built environment: get the values from both selects and send to backend
+
                         var r = document.getElementById("roleSelect");
                         var role = r.options[r.selectedIndex].value;
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
-// <<<<<<< HEAD
+
                         socket.emit('target player', player, cardLastClicked.strength, role);
                         console.log(player, cardLastClicked.strength, role)
-// =======
-                        // console.log("Emitting target player message");
-                        // socket.emit('target player', player, cardLastClicked, role);
-// >>>>>>> master
                         break;
                     default:
                         break;
-               }
+                }
+                // we need to remove the contents of the modal because at the moment, if 
+                // the same player plays built environ next turn, there will be two modal bodies
+                var modal_body = document.getElementById('modal-body');
+                var modal_body_children = document.getElementById('modal-body').childNodes;
+                while (modal_body.lastChild.id !== 'information') {
+                    modal_body.removeChild(modal_body.lastChild);
+                }
+
                     
             }
             function saveInfo(card) {
