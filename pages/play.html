@@ -247,11 +247,11 @@
                     cardToRemove.removeChild(cardToRemove.firstChild);
                 }
                 socket.emit('play card', playedCard, otherCard);
-                // console.log(playedCard);
-                // console.log(otherCard);
+                console.log("playedCard = " + playedCard);
+                console.log("otherCard = " + otherCard);
                 cardLastClicked.strength = playedCard;
                 otherPlayerCard.strength = otherCard;
-                console.log(cardLastClicked.strength);
+                console.log("strength of last clicked = " + cardLastClicked.strength);
 
             }
 
@@ -366,6 +366,7 @@
             }
 
             function submitModal(){
+                console.log("in submitModal, cardLastClicked strength = " + cardLastClicked.strength);
                 switch (cardLastClicked.strength) {
                     case 1: 
                         //Built environment: get the values from both selects and send to backend
@@ -425,9 +426,10 @@
                     card1 = document.getElementById("card1");
                     card1Child = card1.childNodes;
                     grandchild = card1Child[0].childNodes;
+                    content = grandchild[0].childNodes;
 
                     otherPlayerCard = {
-                        "name": grandchild[0].innerHTML,
+                        "name": content[0].innerHTML,
                         "cardNum": "card1",
                         "strength": -1
                     };
