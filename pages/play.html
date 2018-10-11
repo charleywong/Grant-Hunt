@@ -165,6 +165,7 @@
                 document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
             });
 
+
             function copyToClipboard() {
                 var textArea = document.createElement("textarea")
             
@@ -189,63 +190,12 @@
                 // cardLastClicked stores:
                 // {
                 //     "name":"..",
-                //     "cardNum":".."
+                //     "cardNum":"..",
+                //     "strength":".."
                 // }
 
-                var playedCard;
-                var otherCard;
-                switch (cardLastClicked.name) {
-                    case "Built Environment":
-                        playedCard = 1;
-                        break;
-                    case "Arts":
-                        playedCard = 2;
-                        break;
-                    case "Law":
-                        playedCard = 3;
-                        break;
-                    case "Medicine":
-                        playedCard = 4;
-                        break;
-                    case "Science":
-                        playedCard = 5;
-                        break;
-                    case "Engineering":
-                        playedCard = 6;
-                        break;
-                    case "Business":
-                        playedCard = 7;
-                        break;
-                    default:
-                        playedCard = 8;
-                }  
-                switch (otherPlayerCard.name) {
-                    case "Built Environment":
-                        otherCard = 1;
-                        break;
-                    case "Arts":
-                        otherCard = 2;
-                        break;
-                    case "Law":
-                        otherCard = 3;
-                        break;
-                    case "Medicine":
-                        otherCard = 4;
-                        break;
-                    case "Science":
-                        otherCard = 5;
-                        break;
-                    case "Engineering":
-                        otherCard = 6;
-                        break;
-                    case "Business":
-                        otherCard = 7;
-                        break;
-                    default:
-                        otherCard = 8;
-                }
-                console.log(playedCard);
-                console.log(otherCard);
+                var playedCard = nameToValue(cardLastClicked); 
+                var otherCard = nameToValue(otherPlayerCard);
 
                 // we need to delete the card that has been chosen
                 // we use cardLastClicked.cardNum to determine which children to remove
@@ -265,12 +215,41 @@
                     cardToRemove.removeChild(cardToRemove.firstChild);
                 } 
                 socket.emit('play card', playedCard, otherCard);
-                console.log("emitted played card:"+playedCard+","+otherCard);
-               
+                console.log("emitted played card:"+playedCard+","+otherCard);           
+            }
+
+            //returns card value
+            function nameToValue(card){
+                switch (card.name) {
+                    case "Built Environment":
+                        return 1;
+                        break;
+                    case "Arts":
+                        return 2;
+                        break;
+                    case "Law":
+                        return 3;
+                        break;
+                    case "Medicine":
+                        return 4;
+                        break;
+                    case "Science":
+                        return 5;
+                        break;
+                    case "Engineering":
+                        return 6;
+                        break;
+                    case "Business":
+                        return 7;
+                        break;
+                    default:
+                        return 8;
+                }
             }
 
             socket.on('select player', function(playedCard, playerList){
                 console.log(playedCard);
+                
                 switch (playedCard){
                     case 1: 
                         builtEnvironment(playerList);
@@ -312,7 +291,6 @@
                         roles.appendChild(child);
                     }
                 }
-                
             }
 
             function law(playerList){
@@ -348,17 +326,15 @@
             }
 
             function submitModal(){
-            	console.log("submit modal clicked!");
-            	console.log(cardLastClicked);
-                switch (cardLastClicked.name){
-                    case "Built Environment": 
-                    //Built environment: get the values from both selects and send to backend
+                switch (cardLastClicked.strength) {
+                    case 1: 
+                        //Built environment: get the values from both selects and send to backend
                         var r = document.getElementById("roleSelect");
                         var role = r.options[r.selectedIndex].value;
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
-                        console.log("Emitting target player message");
                         socket.emit('target player', player, cardLastClicked, role);
+                        console.log(player, cardLastClicked.strength, role)
                         break;
                     case "Law":
                          //Law: get the values from player select and send to backend
@@ -368,10 +344,20 @@
                         socket.emit('target player', player, cardLastClicked, null);
                         break;
                     default:
-                        break;
-               }
+                    socket.emit('target player', player, cardLastClicked, null);
+                }
+                // we need to remove the contents of the modal because at the moment, if 
+                // the same player plays built environ next turn, there will be two modal bodies
+                var modal_body = document.getElementById('modal-body');
+                var modal_body_children = document.getElementById('modal-body').childNodes;
+                while (modal_body.lastChild.id !== 'information') {
+                    modal_body.removeChild(modal_body.lastChild);
+                }
+
                     
             }
+
+
             function saveInfo(card) {
                 cardChildren = card.childNodes;
                 cardGrandChildren = cardChildren[0].childNodes;
@@ -379,8 +365,9 @@
                 parent = card.parentNode;
                 cardLastClicked = {
                     "name":cardGrandChildren[0].innerHTML,
-                    "cardNum": parent.id
-                }
+                    "cardNum": parent.id,
+                    "strength": -1
+                };
 
                 if (parent.id == "card1") {
                     // other card is card2
@@ -401,8 +388,9 @@
 
                     otherPlayerCard = {
                         "name": grandchild[0].innerHTML,
-                        "cardNum": "card1"
-                    }
+                        "cardNum": "card1",
+                        "strength": -1
+                    };
                 }
                 // first, we need to check if card1 or card2 was clicked
 
