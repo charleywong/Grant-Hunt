@@ -272,6 +272,10 @@
                 }
             });
 
+            socket.on('arts result', function(targetPlayer, cardInfo) {
+                console.log("arts res");
+                artsRes(targetPlayer, cardInfo);
+            });
 
             function builtEnvironment() {
                 console.log("I'm here");
@@ -350,14 +354,14 @@
                 }
             }
 
-            function artsRes(targetedPlayer, card) {
+            function artsRes(targetedPlayer, cardInfo) {
                 // function that GETS called when we get result from backend
                 // need to show the card player what cards are in the targeted player's hand
                 // use the modal 
                 // we just need to show names of cards for now
 
                 document.getElementById('modal-title').innerHTML = "You've played Arts";
-                document.getElementById('information').innerHTML = targetedPlayer + " has this card: " + card;
+                document.getElementById('information').innerHTML = targetedPlayer + " has this card: " + card.name;
 
             }
 
@@ -372,15 +376,15 @@
                         var player = p.options[p.selectedIndex].value;
 
                         socket.emit('target player', player, cardLastClicked.strength, role);
-                        console.log(player, cardLastClicked.strength, role)
+                        // console.log(player, cardLastClicked.strength, role)
+                        cardLastClicked = undefined;
                         break;
                     case 2:
-                        // var r = document.getElementById("roleSelect");
-                        // var role = r.options[r.selectedIndex].value;
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
 
                         socket.emit('target player', player, cardLastClicked.strength);
+                        cardLastClicked = undefined;
                         break;
                     default:
                         break;

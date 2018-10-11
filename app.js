@@ -270,6 +270,7 @@ function turnPhaseOne(playedCard, otherCard){
 // And performs the action corresponding to their card
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   console.log("Initiating turn phase one for player " + game.currentPlayer + ".");
+  console.log(playedCard, guessedCard);
   var id = game.currentPlayer;
   // Perform action based on card
   // If the card was Built environment, check the guess
@@ -288,7 +289,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
       socket.to(game.players[id]).emit('invalid play');
     } else if(playedCard == 2){
       //if looking at a players hand with arts
-      socket.to(game.players[id]).emit('arts result', cardInfo(result));
+      socket.to(game.players[id]).emit('arts result', targetPlayer, cardInfo(result));
     } else if(playedCard == 3) {
       if(result == 8){
         //if player knocks themselves out with Law card
