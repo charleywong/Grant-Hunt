@@ -104,6 +104,24 @@
                 playersInGame = remainingPlayersInGame;
                 playersInRound = remainingPlayersInRound;
                 playerId = pId;
+                //update the play count
+                var table = document.getElementsByClassName("player-table")[0];
+                var tbody = document.createElement("tbody");
+                table.appendChild(tbody);
+                for(var p in remainingPlayersInGame){
+                    var row = document.createElement("tr");
+                    var player = document.createElement("td");
+                    var roundsWon = document.createElement("td");
+                    roundsWon.innerHTML = "0";
+                    player.innerHTML = p;
+                    if(!playersInRound.includes(p)){
+                        row.style.opacity = 0.25;
+                    }
+                    tbody.appendChild(row);
+                    row.appendChild(player);
+                    row.appendChild(roundsWon);
+                }
+
             });
             
             socket.on('your turn', function(currentPlayer, card1, card){
@@ -255,7 +273,7 @@
                 console.log(playedCard);
                 switch (playedCard){
                     case 1: 
-                        builtEnvironment();
+                        builtEnvironment(playerList);
                         break;
                     case 3:
                         law(playerList);
@@ -267,33 +285,11 @@
                 }
             });
 
-            function builtEnvironment(){
-                console.log("I'm here");
+            function builtEnvironment(playerList){
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Built Environment";
                 document.getElementById('information').innerHTML = "Guess the name of a card in your opponent's hand to knock them out of the round";
-                //Append players
-                var playersLabel = document.createElement("label");
-                document.getElementById('modal-body').appendChild(playersLabel);
-                playersLabel.setAttribute("for", "playerSelect");
-                playersLabel.innerHTML = "Select a player:";
-                var players = document.createElement("select");
-                document.getElementById('modal-body').appendChild(players);
-                players.setAttribute("id", "playerSelect");
-                players.setAttribute("name", "playerSelect");
-                players.setAttribute("class", "form-control");
-                for (var p in playersInRound){
-                    if(p != playerId){
-                        //create an <option> to add the <select>
-                        var child = document.createElement("option");
-                        //assign values to the <option>
-                        child.textContent = p
-                        child.value = playersInRound[p];
-                        //attach the mew <option> to the <selection>
-                        players.appendChild(child);
-                    }
-                    
-                }
+                appendPlayersList(playerList);
                 //Append roles
                 var roleLabel = document.createElement("label");
                 document.getElementById('modal-body').appendChild(roleLabel);
@@ -323,6 +319,10 @@
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Law";
                 document.getElementById('information').innerHTML = "Select an opponent and the player with the lower rank is knocked out of the round.";
+                appendPlayersList(playerList);
+            }
+
+            function appendPlayersList(playerList){
                 //Append players
                 var playersLabel = document.createElement("label");
                 document.getElementById('modal-body').appendChild(playersLabel);
@@ -469,7 +469,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
+                                <!-- <tr>
                                     <th scope="row">1</th>
                                     <td>0</td>
                                 </tr>
@@ -484,7 +484,7 @@
                                 <tr>
                                     <th scope="row">4</th>
                                     <td>0</td>
-                                </tr>
+                                </tr> -->
                             </tbody>
                         </table>
                     </div>
