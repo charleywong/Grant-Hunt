@@ -97,6 +97,7 @@
                 //     return false;
                 // };
                 
+                
 
             });
             
@@ -104,16 +105,34 @@
                 playersInGame = remainingPlayersInGame;
                 playersInRound = remainingPlayersInRound;
                 playerId = pId;
-                //update the play count
-                var table = document.getElementsByClassName("player-table")[0];
-                var tbody = document.createElement("tbody");
-                table.appendChild(tbody);
-                for(var p in remainingPlayersInGame){
-                    var row = document.createElement("tr");
-                    var player = document.createElement("td");
-                    var roundsWon = document.createElement("td");
-                    roundsWon.innerHTML = "0";
-                    player.innerHTML = p;
+                if(!document.getElementById("players")){
+                    //add players count
+                    var table = document.getElementsByClassName("player-table")[0];
+                    var tbody = document.createElement("tbody");
+                    tbody.setAttribute("id", "players");
+                    table.appendChild(tbody);
+                    console.log(remainingPlayersInRound);
+                    for(var p in remainingPlayersInGame){
+                        var row = document.createElement("tr");
+                        row.setAttribute("name", "player-status");
+                        var player = document.createElement("td");
+                        var roundsWon = document.createElement("td");
+                        roundsWon.innerHTML = "0";
+                        player.innerHTML = p;
+                        if(!remainingPlayersInRound.includes(p)){
+                            row.style.opacity = 0.25;
+                        }
+                        tbody.appendChild(row);
+                        row.appendChild(player);
+                        row.appendChild(roundsWon);
+                    }
+                }
+                //update players count
+                var tr = document.getElementsByName("player-status");
+                for(var row in tr){
+                    var td = document.getElementsByTagName("td");
+                    var player = td[0];
+                    var roundsWon = td[0];
                     if(!playersInRound.includes(p)){
                         row.style.opacity = 0.25;
                     }
