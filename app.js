@@ -286,36 +286,35 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     var result = selected_player(id, targetPlayer, playedCard);
     if(result == 0){
       //if targeting a player with medicine immunity
-      socket.to(game.players[id]).emit('invalid play');
+   play(game.players[id]).emit('invalid play');
     } else if(playedCard == 2){
       //if looking at a players hand with arts
-      // console.log("id of curr player: "+id);
-      socket.to(game.players[id]).emit('arts result', cardInfo(result));
+      play.to(game.players[id]).emit('arts result',targetPlayer, cardInfo(result));
     } else if(playedCard == 3) {
       if(result == 8){
         //if player knocks themselves out with Law card
         //tell player and also tell opponent, also show which cards were compared
-        socket.to(game.players[id]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
-        socket.to(game.players[targetPlayer]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[targetPlayer]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
       } else if(result == -8){
         //if player knocks opponent out, it's the other way around
-        socket.to(game.players[id]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
-        socket.to(game.players[targetPlayer]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[targetPlayer]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
       } else {
         //otherwise it's a tie
-        socket.to(game.players[id]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
-        socket.to(game.players[targetPlayer]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[targetPlayer]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
       }
     } else if (playerCard == 5){
       //if player uses Science to make someone discard
       //we tell that player what their new card is
       //(if the new card is a 0 they got eliminated!)
-      socket.to(game.players[targetPlayer]).emit('science draw', game.playerHands[targetPlayer]);
+      play.to(game.players[targetPlayer]).emit('science draw', game.playerHands[targetPlayer]);
     } else if (playerCard == 6){
       //if players swap hand with Engineering
       //we tell both players what their new hands are
-      socket.to(game.players[id]).emit('eng swap', game.playerHands[id]);
-      socket.to(game.players[targetPlayer]).emit('eng swap', game.playerHands[targetPlayer]);
+      play.to(game.players[id]).emit('eng swap', game.playerHands[id]);
+      play.to(game.players[targetPlayer]).emit('eng swap', game.playerHands[targetPlayer]);
     }
   }
   // Proceed to next turn

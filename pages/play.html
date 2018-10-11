@@ -273,7 +273,7 @@
             });
 
             socket.on('arts result', function(targetPlayer, cardInfo) {
-                console.log("arts res");
+                // console.log("arts res");
                 artsRes(targetPlayer, cardInfo);
             });
 
@@ -360,8 +360,10 @@
                 // use the modal 
                 // we just need to show names of cards for now
 
+                // TODO: Add sick transition effect at a later date
+                $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Arts";
-                document.getElementById('information').innerHTML = targetedPlayer + " has this card: " + card.name;
+                document.getElementById('information').innerHTML = "Player " +  targetedPlayer + " has this card: " + cardInfo.name;
 
             }
 
