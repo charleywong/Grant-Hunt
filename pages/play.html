@@ -260,8 +260,15 @@
                 for (var p in playersInRound) {
                     console.log("players in round: " +  playersInRound[p])
                 }
-                if (cardLastClicked.strength == 1){
-                    builtEnvironment();
+                switch (cardLastClicked.strength) {
+                    case 1:
+                        builtEnvironment();
+                        break;
+                    case 2:
+                        arts();
+                        break;
+                    default:
+                        break;
                 }
             });
 
@@ -313,14 +320,50 @@
                         roles.appendChild(child);
                     }
                 }
-                
+            }
+
+            function arts() {
+                // to take care of arts
+                // playing arts lets us take a look at other people's hands
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've played Arts";
+                document.getElementById('information').innerHTML = "Pick a player to look at their hand!";
+                //Append players
+                var playersLabel = document.createElement("label");
+                document.getElementById('modal-body').appendChild(playersLabel);
+                playersLabel.setAttribute("for", "playerSelect");
+                playersLabel.innerHTML = "Select a player:";
+                var players = document.createElement("select");
+                document.getElementById('modal-body').appendChild(players);
+                players.setAttribute("id", "playerSelect");
+                players.setAttribute("name", "playerSelect");
+                players.setAttribute("class", "form-control");
+                for (var p in playersInRound){
+                    //create an <option> to add the <select>
+                    var child = document.createElement("option");
+                    //assign values to the <option>
+                    child.textContent = playersInRound[p];
+                    child.value = playersInRound[p];
+                    //attach the mew <option> to the <selection>
+                    players.appendChild(child);
+                    
+                }
+            }
+
+            function artsRes(targetedPlayer, card) {
+                // function that GETS called when we get result from backend
+                // need to show the card player what cards are in the targeted player's hand
+                // use the modal 
+                // we just need to show names of cards for now
+
+                document.getElementById('modal-title').innerHTML = "You've played Arts";
+                document.getElementById('information').innerHTML = targetedPlayer + " has this card: " + card;
+
             }
 
             function submitModal(){
-
                 switch (cardLastClicked.strength) {
                     case 1: 
-
                         //Built environment: get the values from both selects and send to backend
 
                         var r = document.getElementById("roleSelect");
@@ -330,6 +373,14 @@
 
                         socket.emit('target player', player, cardLastClicked.strength, role);
                         console.log(player, cardLastClicked.strength, role)
+                        break;
+                    case 2:
+                        // var r = document.getElementById("roleSelect");
+                        // var role = r.options[r.selectedIndex].value;
+                        var p = document.getElementById("playerSelect");
+                        var player = p.options[p.selectedIndex].value;
+
+                        socket.emit('target player', player, cardLastClicked.strength);
                         break;
                     default:
                         break;
