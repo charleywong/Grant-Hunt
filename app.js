@@ -11,6 +11,8 @@ var usercount = 0;
 
 /**
 Card list:
+-1: Disconnected from game.
+
 0: Empty Card!
 1: Guard    Built Environment   (5 copies)
 2: Priest   Arts          (2 copies)
@@ -37,7 +39,8 @@ var game =  { players: [],
               currentPlayer: 0,
               deck: deck,
               display_deck: display_deck,
-              last_played: []
+              last_played: [],
+              immune: []
             };
             
 var users = [];
@@ -113,7 +116,7 @@ play.on('connection', function(socket){
           play.emit('update', users.length);
         }
       }
-    }, 10000);
+    }, 75000);
     
   });
   
@@ -222,13 +225,12 @@ function turnPhaseOne(playedCard, otherCard){
   // Perform turn's action based on card
   // Check next action based on card
   var result = played_card(id, playedCard, otherCard);
-  console.log("played_card result: " + result);
   if (result == -1){
     //End game actions
     end_game();
     return;
   } else if (result == 0){
-    // Proceed with game. No second phase needed
+     // Proceed with game. No second phase needed
      nextTurn();
      return;
   } else if(result == 1){
@@ -251,7 +253,9 @@ function turnPhaseOne(playedCard, otherCard){
     //Send a message to say that play is invalid
     play.to(game.players[id]).emit('invalid play');
     return;
-  } 
+  } else if(result == 8){
+    turnPhaseTwo(id, 8, 0);
+  }
 
   // Potentially check to see if there is noone available to select
   // Emit a message and proceed to next turn as no players available to select?
@@ -265,7 +269,8 @@ function turnPhaseOne(playedCard, otherCard){
 // This phase allows a player to select another player
 // And performs the action corresponding to their card
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
-  console.log("Initiating turn phase one for player " + game.currentPlayer + ".");
+  console.log("Initiating turn phase two for player " + game.currentPlayer + ".");
+  console.log(playedCard, guessedCard);
   var id = game.currentPlayer;
   // Perform action based on card
   // If the card was Built environment, check the guess
@@ -278,7 +283,39 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     }
   } else {
     //Perform action as a result of play
-    selected_player(id, targetPlayer, playedCard);
+    var result = selected_player(id, targetPlayer, playedCard);
+    if(result == 0){
+      //if targeting a player with medicine immunity
+   play(game.players[id]).emit('invalid play');
+    } else if(playedCard == 2){
+      //if looking at a players hand with arts
+      play.to(game.players[id]).emit('arts result',targetPlayer, cardInfo(result));
+    } else if(playedCard == 3) {
+      if(result == 8){
+        //if player knocks themselves out with Law card
+        //tell player and also tell opponent, also show which cards were compared
+        play.to(game.players[id]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[targetPlayer]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
+      } else if(result == -8){
+        //if player knocks opponent out, it's the other way around
+        play.to(game.players[id]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[targetPlayer]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
+      } else {
+        //otherwise it's a tie
+        play.to(game.players[id]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[targetPlayer]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
+      }
+    } else if (playerCard == 5){
+      //if player uses Science to make someone discard
+      //we tell that player what their new card is
+      //(if the new card is a 0 they got eliminated!)
+      play.to(game.players[targetPlayer]).emit('science draw', game.playerHands[targetPlayer]);
+    } else if (playerCard == 6){
+      //if players swap hand with Engineering
+      //we tell both players what their new hands are
+      play.to(game.players[id]).emit('eng swap', game.playerHands[id]);
+      play.to(game.players[targetPlayer]).emit('eng swap', game.playerHands[targetPlayer]);
+    }
   }
   // Proceed to next turn
   nextTurn();
@@ -300,6 +337,14 @@ function nextTurn(){
     id = (id + 1) % 4;
   }
   game.currentPlayer = id;
+  
+  //upate immunity - if we push onto the right and can only do so on a player's turn, then they should always be on the left on their turn
+  if(game.immune.length > 0){
+    if(game.immune[0] == id){
+      game.splice(0, 1);
+    }
+  }
+  
   
   //update players on who is remaining
   playersInGame();
@@ -361,13 +406,16 @@ function played_card(id, card, otherCard) {
     game.playerHands[id] = 0;
     return 8; //player is knocked out
   } else {
+    if(card == 4){
+      game.immune.push(id);
+    }
     return 0; //no additional prompts
   }
 
   //Why is this here...
-  if (game.deck.length == 0) {
+  /*if (game.deck.length == 0) {
     return -1;
-  }
+  }*/
 }
 
 // Performs action based on card played, and on the player it is played on
@@ -410,11 +458,18 @@ function selected_player(id, player, card) {
 
     } else {
       //nothing happens due to a tie
+      return 1;
     }
   } else if (card == 5) {
     // Cause the selected player to discard a card and draw a new card
-    game.display_deck[game.playerHands[player]]--;
-    game.playerHands[player] = game.deck.pop();
+    var c = game.playerHands[player];
+    game.display_deck[c]--;
+    if(c != 8){
+      game.playerHands[player] = game.deck.pop();
+    } else {
+      //if UNSW is discarded they are out
+      game.playerHands[player] = 0;
+    }
   } else if (card == 6) {
     // Swap hands between current player and selected player
     var temp = game.playerHands[id];
