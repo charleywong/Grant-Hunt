@@ -37,7 +37,7 @@
             });
             
             socket.on('player update', function(data){
-                if(data > 0) {
+                if(data > 0 && document.getElementById("waitingStatus")) {
                     document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players";
                     // alert(data)
                     document.getElementById("share-link").style.visibility = "visible";
@@ -142,8 +142,8 @@
             });
             
             socket.on('your turn', function(currentPlayer, card1, card){
-                document.getElementById("turnstatus").innerHTML = "It's your turn!";
-
+                document.getElementById("turnstatus").innerHTML = "It's your turn, Player " + currentPlayer + "!";
+                playerId = currentPlayer;
                 // only show the end turn button if it's the current player's turn
 
                 document.getElementById("playbutton").style.visibility = "visible";
@@ -183,8 +183,60 @@
             });
 
             socket.on('arts result', function(targetPlayer, cardInfo) {
-                // console.log("arts res");
-                artsRes(targetPlayer, cardInfo);
+                console.log("arts res target is "+ targetPlayer);
+                //artsRes(targetPlayer, cardInfo);
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've played Arts";
+                document.getElementById('information').innerHTML = "Player " +  targetPlayer + " has this card: " + cardInfo.name;
+            });
+
+            socket.on('law loss', function(hands) {
+                console.log(hands);
+                $('#gameModal').modal('show');
+                if(hands['player'][0] == playerId){
+                    var winnerName = hands['target'][0];
+                    var winnerCard = hands['target'][1].name; 
+                    document.getElementById('modal-title').innerHTML = "You've played Law";
+                } else {
+                    var winnerName = hands['player'][0];
+                    var winnerCard = hands['player'][1].name; 
+                    document.getElementById('modal-title').innerHTML = "Player " + hands['player'][0] + " played Law against you";
+                }
+                document.getElementById('information').innerHTML = "Player " +  winnerName + " has this card: " + winnerCard + "<br>" +
+                                                                        "<strong>YOU'VE BEEN KNOCKED OUT OF THE ROUND!</strong>";
+            });
+
+             socket.on('law win', function(hands) {
+                console.log(hands);
+                $('#gameModal').modal('show');
+                if(hands['player'][0] == playerId){
+                    var loserName = hands['player'][0];
+                    var loserCard = hands['player'][1].name; 
+                    document.getElementById('modal-title').innerHTML = "You've played Law";
+                } else {
+                    var loserName = hands['target'][0];
+                    var loserCard = hands['target'][1].name; 
+                    document.getElementById('modal-title').innerHTML = "Player " + hands['player'][0] + " played Law against you";
+                }
+                document.getElementById('information').innerHTML = "Player " +  loserName + " has this card: " + loserCard + "<br>" +
+                                                                        "<strong>YOU'VE KNOCKED YOUR OPPONENT OUT OF THE ROUND!</strong>";
+            });
+
+             socket.on('law tie', function(hands, targetPlayer) {
+                console.log(hands);
+                console.log(targetPlayer);
+                $('#gameModal').modal('show');
+                if(hands['player'][0] == playerId){
+                    var opponentName = hands['target'][0];
+                    var opponentCard = hands['target'][1].name;
+                    document.getElementById('modal-title').innerHTML = "You've played Law";
+                } else {
+                    var opponentName = hands['player'][0];
+                    var opponentCard = hands['player'][1].name;
+                    document.getElementById('modal-title').innerHTML = "Player " + opponentName + " played Law against you";
+                }
+                document.getElementById('information').innerHTML = "Player " +  opponentName + " has this card: " + opponentCard + " and so do you!<br>" +
+                                                                        "<strong>It's a tie, you both stay in the round!</strong>";
             });
 
             function copyToClipboard() {
@@ -348,7 +400,12 @@
                     //create an <option> to add the <select>
                     var child = document.createElement("option");
                     //assign values to the <option>
-                    child.textContent = playersInRound[p];
+                    if(playerId == p){
+                        child.textContent = playersInRound[p] + " (You)";
+                    } else {
+                        child.textContent = playersInRound[p];
+                    }
+                    
                     child.value = playersInRound[p];
                     //attach the mew <option> to the <selection>
                     players.appendChild(child);
@@ -372,7 +429,6 @@
             function submitModal(){
                 console.log("in submitModal, cardLastClicked strength = " + cardLastClicked.strength);
                 switch (cardLastClicked.strength) {
-                    
                     case 1: 
                         //Built environment: get the values from both selects and send to backend
                         var r = document.getElementById("roleSelect");

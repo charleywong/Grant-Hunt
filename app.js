@@ -286,24 +286,28 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     var result = selected_player(id, targetPlayer, playedCard);
     if(result == 0){
       //if targeting a player with medicine immunity
-   play(game.players[id]).emit('invalid play');
+      play(game.players[id]).emit('invalid play');
     } else if(playedCard == 2){
       //if looking at a players hand with arts
       play.to(game.players[id]).emit('arts result',targetPlayer, cardInfo(result));
     } else if(playedCard == 3) {
+      var hands = {};
+      // hands[role] = [playerId, hand compared]
+      hands['player'] = [id, cardInfo(game.playerHands[id])];
+      hands['target'] = [targetPlayer, cardInfo(game.playerHands[targetPlayer])];
       if(result == 8){
         //if player knocks themselves out with Law card
         //tell player and also tell opponent, also show which cards were compared
-        play.to(game.players[id]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
-        play.to(game.players[targetPlayer]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law loss', hands);
+        play.to(game.players[targetPlayer]).emit('law win', hands);
       } else if(result == -8){
         //if player knocks opponent out, it's the other way around
-        play.to(game.players[id]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
-        play.to(game.players[targetPlayer]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law win', hands);
+        play.to(game.players[targetPlayer]).emit('law loss',  hands);
       } else {
         //otherwise it's a tie
-        play.to(game.players[id]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
-        play.to(game.players[targetPlayer]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law tie',  hands, targetPlayer);
+        play.to(game.players[targetPlayer]).emit('law tie',  hands, targetPlayer);
       }
     } else if (playerCard == 5){
       //if player uses Science to make someone discard
