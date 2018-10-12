@@ -149,7 +149,59 @@
                 document.getElementById("playbutton").style.visibility = "visible";
 
                 // var card1 = document.getElementById("card1").childNodes;
-                var card2 = document.getElementById("card2");
+                appendNewCard(card, "card2");
+
+                // only allow current player be able to click anything
+                document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
+            });
+
+            socket.on('select player', function(playedCard, playerList){
+                console.log(playedCard);
+                
+                switch (playedCard){
+                    case 1: 
+                        builtEnvironment(playerList);
+                        break;
+                    case 2:
+                        arts(playerList);
+                        break;
+                    case 3:
+                        law(playerList);
+                        break;
+                    case 5:
+                        science(playerList);
+                        break;
+                    default:
+                        console.log("Emitting BLANK target player message");
+                        socket.emit('target player', player, cardLastClicked, null);
+                        break;
+                }
+            });
+
+            socket.on('arts result', function(targetPlayer, cardInfo) {
+
+                // TODO: Add sick transition effect at a later date
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've played Arts";
+                document.getElementById('information').innerHTML = "Player " +  targetedPlayer + " has this card: " + cardInfo.name;
+            });
+
+            socket.on('science draw', function(newCard) {
+                // draw new card for targeted player
+                // set it for card 2
+                console.log("science draw");
+                // remove card1 and replace with newCard
+                removeCardData("card1");
+                appendNewCard(newCard, "card1");
+                // notify player that someone has targeted them and their existing card will be discarded
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "Someone has played Medicine and targeted you!";
+                document.getElementById('information').innerHTML = "As a result, your existing card has been discarded and your new card is: " + newCard.name;
+
+            });
+
+            function appendNewCard(card, cardToAddTo) {
+                var card2 = document.getElementById(cardToAddTo);
 
                 var cardData = document.createElement("div");
                 cardData.setAttribute("class","card");
@@ -177,39 +229,15 @@
                 cardData.appendChild(card_body);
 
                 card2.appendChild(cardData)
+            }
 
-                // only allow current player be able to click anything
-                document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
-            });
-
-            socket.on('select player', function(playedCard, playerList){
-                console.log(playedCard);
-                
-                switch (playedCard){
-                    case 1: 
-                        builtEnvironment(playerList);
-                        break;
-                    case 2:
-                        arts(playerList);
-                        break;
-                    case 3:
-                        law(playerList);
-                        break;
-                    default:
-                        console.log("Emitting BLANK target player message");
-                        socket.emit('target player', player, cardLastClicked, null);
-                        break;
+            function removeCardData(cardToRemove) {
+                var card = document.getElementById(cardToRemove);
+                while (card.firstChild) {
+                    card.removeChild(card.firstChild);
                 }
-            });
 
-            socket.on('arts result', function(targetPlayer, cardInfo) {
-
-                // TODO: Add sick transition effect at a later date
-                $('#gameModal').modal('show');
-                document.getElementById('modal-title').innerHTML = "You've played Arts";
-                document.getElementById('information').innerHTML = "Player " +  targetedPlayer + " has this card: " + cardInfo.name;
-            });
-
+            }
             function copyToClipboard() {
                 var textArea = document.createElement("textarea")
             
@@ -248,16 +276,12 @@
                 if (cardLastClicked.cardNum == "card1") {
                     card2Clone = (document.getElementById("card2").childNodes)[0].cloneNode(true);
                     // remove card1
-                    var tempCard = document.getElementById("card1");
-                    while (tempCard.firstChild) {
-                        tempCard.removeChild(tempCard.firstChild);
-                    }
+                    removeCardData("card1")
+                    
                     card1.appendChild(card2Clone);
                 }
-                var cardToRemove = document.getElementById("card2");
-                while (cardToRemove.firstChild) {
-                    cardToRemove.removeChild(cardToRemove.firstChild);
-                } 
+                removeCardData("card2")
+            
                 socket.emit('play card', playedCard, otherCard);
                 console.log("playedCard = " + playedCard);
                 console.log("otherCard = " + otherCard);
@@ -334,6 +358,13 @@
                 appendPlayersList(playerList);
             }
 
+            function science(playerList) {
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've played Science";
+                document.getElementById('information').innerHTML = "Select an opponent and discard their hand.";
+                appendPlayersList(playerList);
+            }
+
             function appendPlayersList(playerList){
                 //Append players
                 var playersLabel = document.createElement("label");
@@ -378,12 +409,19 @@
                         socket.emit('target player', player, cardLastClicked.strength);
                         cardLastClicked = undefined;
                         break;
-                    case "Law":
+                    case 3:
                          //Law: get the values from player select and send to backend
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
                         console.log("Emitting target player message");
                         socket.emit('target player', player, cardLastClicked.strength, null);
+                        cardLastClicked = undefined;
+                        break;
+                    case 5:
+                        var p = document.getElementById("playerSelect");
+                        var player = p.options[p.selectedIndex].value;
+                        socket.emit('target player', player, cardLastClicked.strength, null);
+                        cardLastClicked = undefined;
                         break;
                     default:
                         socket.emit('target player', player, cardLastClicked.strength, null);
