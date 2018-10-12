@@ -183,7 +183,7 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [8, 7, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1, 1, 1, 1];
+  return [8, 7, 6, 5, 5, 4, 3, 3, 2, 2, 1, 1, 1, 1, 1, 4];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
@@ -262,7 +262,7 @@ function turnPhaseOne(playedCard, otherCard){
   //
 
   // Emit message featuring player list indicating phase two of turn
-  play.to(game.players[id]).emit('select player', playedCard, playerList);
+  play.to(game.players[id]).emit('select player', playedCard, playerList, game.immune);
 }
   
 // Prepare for Phase Two of a turn

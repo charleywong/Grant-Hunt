@@ -182,18 +182,18 @@
                 document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
             });
 
-            socket.on('select player', function(playedCard, playerList){
+            socket.on('select player', function(playedCard, playerList, immunePlayers){
                 console.log(playedCard);
                 
                 switch (playedCard){
                     case 1: 
-                        builtEnvironment(playerList);
+                        builtEnvironment(playerList, immunePlayers);
                         break;
                     case 2:
-                        arts(playerList);
+                        arts(playerList, immunePlayers);
                         break;
                     case 3:
-                        law(playerList);
+                        law(playerList, immunePlayers);
                         break;
                     default:
                         console.log("Emitting BLANK target player message");
@@ -289,11 +289,11 @@
                 }
             }
 
-            function builtEnvironment(playerList){
+            function builtEnvironment(playerList, immunePlayers){
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Built Environment";
                 document.getElementById('information').innerHTML = "Guess the name of a card in your opponent's hand to knock them out of the round";
-                appendPlayersList(playerList);
+                appendPlayersList(playerList, immunePlayers);
                 //Append roles
                 var roleLabel = document.createElement("label");
                 document.getElementById('modal-body').appendChild(roleLabel);
@@ -319,23 +319,23 @@
 
             }
 
-            function arts(playerList) {
+            function arts(playerList, immunePlayers) {
                 // to take care of arts
                 // playing arts lets us take a look at other people's hands
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Arts";
                 document.getElementById('information').innerHTML = "Pick a player to look at their hand!";
-                appendPlayersList(playerList);
+                appendPlayersList(playerList, immunePlayers);
 
             }
-            function law(playerList){
+            function law(playerList, immunePlayers){
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Law";
                 document.getElementById('information').innerHTML = "Select an opponent and the player with the lower strength card in their hand is knocked out of the round.";
-                appendPlayersList(playerList);
+                appendPlayersList(playerList, immunePlayers);
             }
 
-            function appendPlayersList(playerList){
+            function appendPlayersList(playerList, immunePlayers){
                 //Append players
                 var playersLabel = document.createElement("label");
                 document.getElementById('modal-body').appendChild(playersLabel);
@@ -350,12 +350,21 @@
                     //create an <option> to add the <select>
                     var child = document.createElement("option");
                     //assign values to the <option>
+                    // check if the player is immune
                     child.textContent = playersInRound[p];
                     child.value = playersInRound[p];
+                    if (immunePlayers.includes(playersInRound[p])) {
+                        child.textContent = child.textContent + " (Medicine)";
+                        child.value = child.value + " (Medicine)";
+                        // also need to disable this option
+                        child.disabled = true;
+                    }
+                    
                     //attach the mew <option> to the <selection>
                     players.appendChild(child);
                     
                 }
+                // we need to disable 
             }
 
             function submitModal(){
