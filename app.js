@@ -262,7 +262,7 @@ function turnPhaseOne(playedCard, otherCard){
   //
 
   // Emit message featuring player list indicating phase two of turn
-  play.to(game.players[id]).emit('select player', playedCard, playerList);
+  play.to(game.players[id]).emit('select player', playedCard, playerList, game.immune);
 }
   
 // Prepare for Phase Two of a turn
