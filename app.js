@@ -189,14 +189,13 @@ function newDeck(){
 
 
 function playersInGame(){
-
   var remainingPlayersInRound = [];
-    var remainingPlayersInGame = [];
-    for(var i = 0; i < game.players.length; i++){
-      if(game.playerHands[i] != -1){
-        remainingPlayersInGame.push(i);
-      }
-    
+  var remainingPlayersInGame = [];
+  for(var i = 0; i < game.players.length; i++){
+    if(game.playerHands[i] != -1){
+      remainingPlayersInGame.push(i);
+    }
+  
     if(game.playerHands[i] > 0){
       remainingPlayersInRound.push(i);
     }
@@ -277,7 +276,16 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   if(playedCard == 1) {
     // Ensure a guess was made/submited
     if(guessedCard != null){
-      guessed_card(id, targetPlayer, guessedCard);
+      var result = guessed_card(id, targetPlayer, guessedCard);
+      if(result == -8){
+        //targeted player knocked out
+        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, true);
+        play.to(game.players[targetPlayer]).emit('built result', id, targetPlayer, guessedCard, true);
+      } else {
+        //targeted player NOT knocked out
+        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, false);
+        play.to(game.players[targetPlayer]).emit('built result', id ,targetPlayer, guessedCard, false);
+      }
     } else {
       console.log("Error: guard played with no guessed card");
     }
@@ -489,8 +497,6 @@ function guessed_card (id, player, card) {
   if (game.deck.length == 0) {
     end_game();
   }
-  //TODO: Notify front end
-
   if (card == game.playerHands[player]) {
     game.display_deck[card]--;
     game.playerHands[player] = 0;

@@ -37,7 +37,7 @@
             });
             
             socket.on('player update', function(data){
-                if(data > 0 && document.getElementById("waitingStatus")) {
+                if(data > 0) {
                     document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players";
                     // alert(data)
                     document.getElementById("share-link").style.visibility = "visible";
@@ -182,17 +182,46 @@
                 document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
             });
 
-            socket.on('arts result', function(targetPlayer, cardInfo) {
-                console.log("arts res target is "+ targetPlayer);
-                //artsRes(targetPlayer, cardInfo);
+            socket.on('built result', function(playedPlayer, targetPlayer, guessedCard, val){
                 $('#gameModal').modal('show');
+                //Change modal button to close
+                submitModalButtonSwitch(null);
+                //Display message
+                var message = "";
+                if(targetPlayer == playerId){
+                    document.getElementById('modal-title').innerHTML = "Player " + playedPlayer + " played Built Environment against you";
+                    message = "Player " + playedPlayer + " guessed that you have " + valueToName(guessedCard);
+                    if(val){
+                        message += " and was correct. <br> <strong>YOU'VE BEEN KNOCKED OUT OF THE ROUND</strong>";
+                    } else {
+                        message += " and was wrong! <br> <strong> You stay in the round! </strong>";
+                    }
+                } else {
+                    document.getElementById('modal-title').innerHTML = "You've played Built Environment";
+                    message = "You guessed that Player " + targetPlayer + " has " + valueToName(guessedCard);
+                    if(val){
+                        message += " and was correct. <br> <strong>PLAYER " + targetPlayer + " HAS BEEN KNOCKED OUT OF THE ROUND</strong>";
+                    } else {
+                        message += " and was wrong!<br> <strong>Player " + targetPlayer + " stays in the round! </strong>";
+                    }
+                }
+                document.getElementById('information').innerHTML = message;
+            });
+
+            socket.on('arts result', function(targetPlayer, cardInfo) {
+                $('#gameModal').modal('show');
+                //Change modal button to close
+                submitModalButtonSwitch(null);
+                //Display message
                 document.getElementById('modal-title').innerHTML = "You've played Arts";
-                document.getElementById('information').innerHTML = "Player " +  targetPlayer + " has this card: " + cardInfo.name;
+                document.getElementById('information').innerHTML = "Player " +  targetPlayer + " has the card " + cardInfo.name;
             });
 
             socket.on('law loss', function(hands) {
-                console.log(hands);
                 $('#gameModal').modal('show');
+                //Change modal button to close
+                submitModalButtonSwitch(null);
+                //Display message
                 if(hands['player'][0] == playerId){
                     var winnerName = hands['target'][0];
                     var winnerCard = hands['target'][1].name; 
@@ -202,13 +231,15 @@
                     var winnerCard = hands['player'][1].name; 
                     document.getElementById('modal-title').innerHTML = "Player " + hands['player'][0] + " played Law against you";
                 }
-                document.getElementById('information').innerHTML = "Player " +  winnerName + " has this card: " + winnerCard + "<br>" +
+                document.getElementById('information').innerHTML = "Player " +  winnerName + " has the card " + winnerCard + "<br>" +
                                                                         "<strong>YOU'VE BEEN KNOCKED OUT OF THE ROUND!</strong>";
             });
 
              socket.on('law win', function(hands) {
-                console.log(hands);
                 $('#gameModal').modal('show');
+                //Change modal button to close
+                submitModalButtonSwitch(null);
+                //Display message
                 if(hands['player'][0] == playerId){
                     var loserName = hands['player'][0];
                     var loserCard = hands['player'][1].name; 
@@ -218,14 +249,15 @@
                     var loserCard = hands['target'][1].name; 
                     document.getElementById('modal-title').innerHTML = "Player " + hands['player'][0] + " played Law against you";
                 }
-                document.getElementById('information').innerHTML = "Player " +  loserName + " has this card: " + loserCard + "<br>" +
+                document.getElementById('information').innerHTML = "Player " +  loserName + " has the card " + loserCard + "<br>" +
                                                                         "<strong>YOU'VE KNOCKED YOUR OPPONENT OUT OF THE ROUND!</strong>";
             });
 
              socket.on('law tie', function(hands, targetPlayer) {
-                console.log(hands);
-                console.log(targetPlayer);
                 $('#gameModal').modal('show');
+                //Change modal button to close
+                submitModalButtonSwitch(null);
+                //Display message
                 if(hands['player'][0] == playerId){
                     var opponentName = hands['target'][0];
                     var opponentCard = hands['target'][1].name;
@@ -235,7 +267,7 @@
                     var opponentCard = hands['player'][1].name;
                     document.getElementById('modal-title').innerHTML = "Player " + opponentName + " played Law against you";
                 }
-                document.getElementById('information').innerHTML = "Player " +  opponentName + " has this card: " + opponentCard + " and so do you!<br>" +
+                document.getElementById('information').innerHTML = "Player " +  opponentName + " has the card " + opponentCard + " and so do you!<br>" +
                                                                         "<strong>It's a tie, you both stay in the round!</strong>";
             });
 
@@ -317,10 +349,31 @@
                         return 8;
                 }
             }
+            //returns card name
+            function valueToName(value){
+                switch (value) {
+                    case "1":
+                        return "Built Environment";
+                    case "2":
+                        return "Arts";
+                    case "3":
+                        return "Law";
+                    case "4":
+                        return "Medicine";
+                    case "5":
+                        return "Science";
+                    case "6":
+                        return "Engineering";
+                    case "7":
+                        return "Business";
+                    default:
+                        return "Unknown";
+                }
+            }
 
             socket.on('select player', function(playedCard, playerList){
                 console.log(playedCard);
-                
+                submitModalButtonSwitch(playedCard);
                 switch (playedCard){
                     case 1: 
                         builtEnvironment(playerList);
@@ -338,7 +391,22 @@
                 }
             });
 
-            
+            function submitModalButtonSwitch(playedCard){
+                var btn =  document.getElementById('modal-submit');
+                console.log("submit :" + typeof(playedCard))
+                switch(playedCard){
+                    case 1: case 2: case 3: case 4: case 5: case 6: case 7:
+                        //display the submit button
+                       btn.innerHTML = "Submit";
+                       btn.setAttribute("onclick", "submitModal();");
+                       break;
+                    default:
+                        //display a button to close the modal
+                        btn.innerHTML = "Close";
+                        btn.removeAttribute("onclick");
+
+                }
+            }
 
             function builtEnvironment(playerList){
                 $('#gameModal').modal('show');
@@ -376,8 +444,8 @@
                 document.getElementById('modal-title').innerHTML = "You've played Arts";
                 document.getElementById('information').innerHTML = "Pick a player to look at their hand!";
                 appendPlayersList(playerList);
-
             }
+
             function law(playerList){
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Law";
@@ -413,19 +481,6 @@
                 }
             }
 
-            function artsRes(targetedPlayer, cardInfo) {
-                // function that GETS called when we get result from backend
-                // need to show the card player what cards are in the targeted player's hand
-                // use the modal 
-                // we just need to show names of cards for now
-
-                // TODO: Add sick transition effect at a later date
-                $('#gameModal').modal('show');
-                document.getElementById('modal-title').innerHTML = "You've played Arts";
-                document.getElementById('information').innerHTML = "Player " +  targetedPlayer + " has this card: " + cardInfo.name;
-
-            }
-
             function submitModal(){
                 console.log("in submitModal, cardLastClicked strength = " + cardLastClicked.strength);
                 switch (cardLastClicked.strength) {
@@ -446,7 +501,7 @@
                         socket.emit('target player', player, cardLastClicked.strength);
                         cardLastClicked = undefined;
                         break;
-                    case "Law":
+                    case 3:
                          //Law: get the values from player select and send to backend
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
