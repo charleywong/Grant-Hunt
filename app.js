@@ -305,8 +305,9 @@ function nextTurn(){
   playersInGame();
   
   //player draws a card
-
+  console.log("drawing new card for next player " + id);
   var newCard = game.deck.pop();
+
   play.to(game.players[id]).emit('your turn', id, cardInfo(game.playerHands[id]), cardInfo(newCard));
   
   

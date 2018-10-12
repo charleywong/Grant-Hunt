@@ -343,7 +343,7 @@
                         var role = r.options[r.selectedIndex].value;
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
-                        socket.emit('target player', player, cardLastClicked, role);
+                        socket.emit('target player', player, cardLastClicked.strength, role);
                         console.log(player, cardLastClicked.strength, role)
                         break;
                     case "Law":
@@ -351,10 +351,10 @@
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
                         console.log("Emitting target player message");
-                        socket.emit('target player', player, cardLastClicked, null);
+                        socket.emit('target player', player, cardLastClicked.strength, null);
                         break;
                     default:
-                    socket.emit('target player', player, cardLastClicked, null);
+                        socket.emit('target player', player, cardLastClicked.strength, null);
                 }
                 // we need to remove the contents of the modal because at the moment, if 
                 // the same player plays built environ next turn, there will be two modal bodies
