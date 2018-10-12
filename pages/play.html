@@ -316,6 +316,7 @@
                         roles.appendChild(child);
                     }
                 }
+
             }
 
             function arts(playerList) {
@@ -384,6 +385,7 @@
                         var player = p.options[p.selectedIndex].value;
                         console.log("Emitting target player message");
                         socket.emit('target player', player, cardLastClicked.strength, null);
+                        cardLastClicked = undefined;
                         break;
                     default:
                         socket.emit('target player', player, cardLastClicked.strength, null);
