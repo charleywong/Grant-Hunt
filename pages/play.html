@@ -182,9 +182,32 @@
                 document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
             });
 
+            socket.on('select player', function(playedCard, playerList){
+                console.log(playedCard);
+                
+                switch (playedCard){
+                    case 1: 
+                        builtEnvironment(playerList);
+                        break;
+                    case 2:
+                        arts(playerList);
+                        break;
+                    case 3:
+                        law(playerList);
+                        break;
+                    default:
+                        console.log("Emitting BLANK target player message");
+                        socket.emit('target player', player, cardLastClicked, null);
+                        break;
+                }
+            });
+
             socket.on('arts result', function(targetPlayer, cardInfo) {
-                // console.log("arts res");
-                artsRes(targetPlayer, cardInfo);
+
+                // TODO: Add sick transition effect at a later date
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've played Arts";
+                document.getElementById('information').innerHTML = "Player " +  targetedPlayer + " has this card: " + cardInfo.name;
             });
 
             function copyToClipboard() {
@@ -266,28 +289,6 @@
                 }
             }
 
-            socket.on('select player', function(playedCard, playerList){
-                console.log(playedCard);
-                
-                switch (playedCard){
-                    case 1: 
-                        builtEnvironment(playerList);
-                        break;
-                    case 2:
-                        arts(playerList);
-                        break;
-                    case 3:
-                        law(playerList);
-                        break;
-                    default:
-                        console.log("Emitting BLANK target player message");
-                        socket.emit('target player', player, cardLastClicked, null);
-                        break;
-                }
-            });
-
-            
-
             function builtEnvironment(playerList){
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Built Environment";
@@ -354,19 +355,6 @@
                     players.appendChild(child);
                     
                 }
-            }
-
-            function artsRes(targetedPlayer, cardInfo) {
-                // function that GETS called when we get result from backend
-                // need to show the card player what cards are in the targeted player's hand
-                // use the modal 
-                // we just need to show names of cards for now
-
-                // TODO: Add sick transition effect at a later date
-                $('#gameModal').modal('show');
-                document.getElementById('modal-title').innerHTML = "You've played Arts";
-                document.getElementById('information').innerHTML = "Player " +  targetedPlayer + " has this card: " + cardInfo.name;
-
             }
 
             function submitModal(){
