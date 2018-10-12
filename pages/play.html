@@ -129,16 +129,14 @@
                 }
                 //update players count
                 var tr = document.getElementsByName("player-status");
-                for(var row in tr){
-                    var td = document.getElementsByTagName("td");
+                for(var i=0; i < tr.length; i++){
+                    var row = tr[i];
+                    var td = row.getElementsByTagName("td");
                     var player = td[0];
                     var roundsWon = td[0];
-                    if(!playersInRound.includes(p)){
+                    if(!playersInRound.includes(player.innerHTML)){
                         row.style.opacity = 0.25;
-                    }
-                    tbody.appendChild(row);
-                    row.appendChild(player);
-                    row.appendChild(roundsWon);
+                    } 
                 }
 
             });
