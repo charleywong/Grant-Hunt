@@ -179,14 +179,13 @@
             });
 
             socket.on('arts result', function(targetPlayer, cardInfo) {
-
                 // TODO: Add sick transition effect at a later date
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Arts";
-                document.getElementById('information').innerHTML = "Player " +  targetedPlayer + " has this card: " + cardInfo.name;
+                document.getElementById('information').innerHTML = "Player " +  targetPlayer + " has this card: " + cardInfo.name;
             });
 
-            socket.on('science draw', function(newCard) {
+            socket.on('science draw', function(playedPlayer, newCard) {
                 // draw new card for targeted player
                 // set it for card 2
                 console.log("science draw");
@@ -195,7 +194,7 @@
                 appendNewCard(newCard, "card1");
                 // notify player that someone has targeted them and their existing card will be discarded
                 $('#gameModal').modal('show');
-                document.getElementById('modal-title').innerHTML = "Someone has played Medicine and targeted you!";
+                document.getElementById('modal-title').innerHTML = "Player " + playedPlayer + " has played Medicine and targeted you!";
                 document.getElementById('information').innerHTML = "As a result, your existing card has been discarded and your new card is: " + newCard.name;
 
             });
@@ -361,7 +360,7 @@
             function science(playerList) {
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Science";
-                document.getElementById('information').innerHTML = "Select an opponent and discard their hand.";
+                document.getElementById('information').innerHTML = "Select an opponent and discard their hand and draw a new card.";
                 appendPlayersList(playerList);
             }
 
