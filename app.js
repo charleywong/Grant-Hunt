@@ -349,46 +349,34 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     } else if(playedCard == 3) {
       var hands = {};
       // hands[role] = [playerId, hand compared]
-      //hands['player'] = [id, cardInfo(game.playerHands[id])];
-      //hands['target'] = [targetPlayer, cardInfo(game.playerHands[targetPlayer])];
+      hands['player'] = [id, cardInfo.cardInfo(game.playerHands[id])];
+      hands['target'] = [targetPlayer, cardInfo.cardInfo(game.playerHands[targetPlayer])];
       if(result == 8){
         //if player knocks themselves out with Law card
         //tell player and also tell opponent, also show which cards were compared
-//<<<<<<< HEAD
-        play.to(game.players[id]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
-        emitMessage1 = ['law loss', game.playerHands[id], game.playerHands[targetPlayer]];
-        play.to(game.players[targetPlayer]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
-        emitMessage2 = ['law win', game.playerHands[id], game.playerHands[targetPlayer]];
+        play.to(game.players[id]).emit('law loss', hands);
+        emitMessage1 = ['law loss', hands];
+        play.to(game.players[targetPlayer]).emit('law win', hands);
+        emitMessage2 = ['law win', hands];
         if(eliminate_player(id) == false) {
           return {message1: emitMessage1, message2: emitMessage2};
         }
       } else if(result == -8){
         //if player knocks opponent out, it's the other way around
-        play.to(game.players[id]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
-        emitMessage1 = ['law win', game.playerHands[id], game.playerHands[targetPlayer]];
-        play.to(game.players[targetPlayer]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
-        emitMessage2 = ['law loss', game.playerHands[id], game.playerHands[targetPlayer]];
+        play.to(game.players[id]).emit('law win', hands);
+        emitMessage1 = ['law win', hands];
+        play.to(game.players[targetPlayer]).emit('law loss', hands);
+        emitMessage2 = ['law loss', hands];
         if(eliminate_player(targetPlayer) == false) {
           return {message1: emitMessage1, message2: emitMessage2};
         } 
       } else {
         //otherwise it's a tie
-        play.to(game.players[id]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
-        emitMessage1 = ['law tie', game.playerHands[id], game.playerHands[targetPlayer]];
-        play.to(game.players[targetPlayer]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
-        emitMessage2 = ['law tie', game.playerHands[id], game.playerHands[targetPlayer]];
-/*=======
-        play.to(game.players[id]).emit('law loss', hands);
-        play.to(game.players[targetPlayer]).emit('law win', hands);
-      } else if(result == -8){
-        //if player knocks opponent out, it's the other way around
-        play.to(game.players[id]).emit('law win', hands);
-        play.to(game.players[targetPlayer]).emit('law loss',  hands);
-      } else {
-        //otherwise it's a tie
         play.to(game.players[id]).emit('law tie',  hands, targetPlayer);
+        emitMessage1 = ['law tie',  hands, targetPlayer];
         play.to(game.players[targetPlayer]).emit('law tie',  hands, targetPlayer);
->>>>>>> master*/
+        emitMessage2 = ['law tie',  hands, targetPlayer];
+
       }
     } else if (playedCard == 5){
       //if player uses Science to make someone discard
@@ -833,8 +821,16 @@ function run_tests(){
   assert(game.playerHands[2] == 6);
   assert(game.playerHands[3] == 2);
   r = turnPhaseTwo(2, 3, 0);
-  assert(listCmp(r.message1, ['law loss', 2, 6]));
-  assert(listCmp(r.message2, ['law win', 2, 6]));
+  assert(r.message1[0] == 'law loss');
+  assert(r.message1[1]['player'][0] == 3);
+  assert(r.message1[1]['player'][1].strength == 2);
+  assert(r.message1[1]['target'][0] == 2);
+  assert(r.message1[1]['target'][1].strength == 6);
+  assert(r.message2[0] == 'law win');
+  assert(r.message2[1]['player'][0] == 3);
+  assert(r.message2[1]['player'][1].strength == 2);
+  assert(r.message2[1]['target'][0] == 2);
+  assert(r.message2[1]['target'][1].strength == 6);
   assert(game.playerHands[3] == 0);
   assert(game.playerHands[2] == 6);
   
