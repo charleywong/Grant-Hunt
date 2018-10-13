@@ -105,9 +105,9 @@ module.exports = {
     if (card == game.playerHands[player]) {
       game.display_deck[card]--;
       game.playerHands[player] = 0;
-      return -8; //other player is knocked out
+      return{game: game, output: -8}; //other player is knocked out
     }
-    return 0;
+    return {game: game, output: 0};
   },
 
   // Proceeds to place game into an end state
@@ -162,6 +162,7 @@ module.exports = {
 
   //checks the state of the game to see if it has reached an end state or not
   check_end_game: function(game) {
+    console.log(game);
     if (game.deck.length == 0) {
       end_game(game);
       return {game:game, output: false};//deck is empty
@@ -310,33 +311,32 @@ function end_game() {
 }
 
 //returns true if there are at least 2 players remaining, otherwise returns false and sets the winner using playerHands
-function remaining_players() {
+function remaining_players(game) {
   var flag = false;
-  var id = -1;
-  for (var i = 0; i < 4; i++) {
-    if (game.playerHands[i] != 0) {
-      id = i;
-      if (flag) return true;
-      flag = true;
+    var id = -1;
+    for (var i = 0; i < 4; i++) {
+      if (game.playerHands[i] != 0) {
+        id = i;
+        if (flag) return {game:game, output: true};
+        flag = true;
+      }
     }
-  }
-  
-  for (var i = 0; i < 4; i++) {
-    if (i == id) {
-      game.playerHands[i] = 1;
-    } else {
-      game.playerHands[i] = 0;
+    
+    for (var i = 0; i < 4; i++) {
+      if (i == id) {
+        game.playerHands[i] = 1;
+      } else {
+        game.playerHands[i] = 0;
+      }
     }
-  }
-  return false;
+    return {game:game, output: false};
 }
-
 //checks the state of the game to see if it has reached an end state or not
-function check_end_game() {
+function check_end_game(game) {
   if (game.deck.length == 0) {
     end_game();
-    return false;//deck is empty
+     return {game:game, output: false};//deck is empty
   }
 
-  return remaining_players();
+  return {game: game, output: remaining_players(game)}
 }
