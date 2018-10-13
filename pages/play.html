@@ -18,17 +18,17 @@
             var allRoles = {'Built Environment': 1, 'Arts':2, 'Law':3, 'Medicine':4, 'Science':5, 'Engineering':6, 'Business':7, 'UNSW':8}
 
             socket.on('registration request', function(){
-				var uid = sessionStorage.getItem('gameUniqueId');
-				if(uid == null){
-					console.log("no session storage found, creating new ID");
-					var randomlyGeneratedUID = Math.random().toString(36).substring(3,16) + +new Date;
+                var uid = sessionStorage.getItem('gameUniqueId');
+                if(uid == null){
+                    console.log("no session storage found, creating new ID");
+                    var randomlyGeneratedUID = Math.random().toString(36).substring(3,16) + +new Date;
 
-					sessionStorage.setItem('gameUniqueId', randomlyGeneratedUID);
-				} else {
-		 			console.log("session storage already found");
-			  	}
-				socket.emit('register', sessionStorage.getItem('gameUniqueId'));
-			});
+                    sessionStorage.setItem('gameUniqueId', randomlyGeneratedUID);
+                } else {
+                    console.log("session storage already found");
+                }
+                socket.emit('register', sessionStorage.getItem('gameUniqueId'));
+            });
 
             socket.on('update', function(data){
                 if(document.getElementById("status")){
@@ -149,7 +149,58 @@
                 document.getElementById("playbutton").style.visibility = "visible";
 
                 // var card1 = document.getElementById("card1").childNodes;
-                var card2 = document.getElementById("card2");
+                appendNewCard(card, "card2");
+
+                // only allow current player be able to click anything
+                document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
+            });
+
+            socket.on('select player', function(playedCard, playerList, immunePlayers){
+                console.log(playedCard);
+                submitModalButtonSwitch(playedCard);
+                switch (playedCard){
+                    case 1: 
+                        builtEnvironment(playerList, immunePlayers);
+                        break;
+                    case 2:
+                        arts(playerList, immunePlayers);
+                        break;
+                    case 3:
+                        law(playerList, immunePlayers);
+                        break;
+                    case 5:
+                        science(playerList, immunePlayers);
+                        break;
+                    default:
+                        console.log("Emitting BLANK target player message");
+                        socket.emit('target player', player, cardLastClicked, null);
+                        break;
+                }
+            });
+
+            socket.on('arts result', function(targetPlayer, cardInfo) {
+                // TODO: Add sick transition effect at a later date
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've played Arts";
+                document.getElementById('information').innerHTML = "Player " +  targetPlayer + " has this card: " + cardInfo.name;
+            });
+
+            socket.on('science draw', function(playedPlayer, newCard) {
+                // draw new card for targeted player
+                // set it for card 2
+                console.log("science draw");
+                // remove card1 and replace with newCard
+                removeCardData("card1");
+                appendNewCard(newCard, "card1");
+                // notify player that someone has targeted them and their existing card will be discarded
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "Player " + playedPlayer + " has played Medicine and targeted you!";
+                document.getElementById('information').innerHTML = "As a result, your existing card has been discarded and your new card is: " + newCard.name;
+
+            });
+
+            function appendNewCard(card, cardToAddTo) {
+                var card2 = document.getElementById(cardToAddTo);
 
                 var cardData = document.createElement("div");
                 cardData.setAttribute("class","card");
@@ -177,10 +228,8 @@
                 cardData.appendChild(card_body);
 
                 card2.appendChild(cardData)
+            }
 
-                // only allow current player be able to click anything
-                document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
-            });
 
             socket.on('built result', function(playedPlayer, targetPlayer, guessedCard, val){
                 $('#gameModal').modal('show');
@@ -270,7 +319,12 @@
                 document.getElementById('information').innerHTML = "Player " +  opponentName + " has the card " + opponentCard + " and so do you!<br>" +
                                                                         "<strong>It's a tie, you both stay in the round!</strong>";
             });
-
+            function removeCardData(cardToRemove) {
+                var card = document.getElementById(cardToRemove);
+                while (card.firstChild) {
+                    card.removeChild(card.firstChild);
+                }
+            }
             function copyToClipboard() {
                 var textArea = document.createElement("textarea")
             
@@ -309,16 +363,12 @@
                 if (cardLastClicked.cardNum == "card1") {
                     card2Clone = (document.getElementById("card2").childNodes)[0].cloneNode(true);
                     // remove card1
-                    var tempCard = document.getElementById("card1");
-                    while (tempCard.firstChild) {
-                        tempCard.removeChild(tempCard.firstChild);
-                    }
+                    removeCardData("card1")
+                    
                     card1.appendChild(card2Clone);
                 }
-                var cardToRemove = document.getElementById("card2");
-                while (cardToRemove.firstChild) {
-                    cardToRemove.removeChild(cardToRemove.firstChild);
-                } 
+                removeCardData("card2")
+            
                 socket.emit('play card', playedCard, otherCard);
                 console.log("playedCard = " + playedCard);
                 console.log("otherCard = " + otherCard);
@@ -371,25 +421,6 @@
                 }
             }
 
-            socket.on('select player', function(playedCard, playerList){
-                console.log(playedCard);
-                submitModalButtonSwitch(playedCard);
-                switch (playedCard){
-                    case 1: 
-                        builtEnvironment(playerList);
-                        break;
-                    case 2:
-                        arts(playerList);
-                        break;
-                    case 3:
-                        law(playerList);
-                        break;
-                    default:
-                        console.log("Emitting BLANK target player message");
-                        socket.emit('target player', player, cardLastClicked, null);
-                        break;
-                }
-            });
 
             function submitModalButtonSwitch(playedCard){
                 var btn =  document.getElementById('modal-submit');
@@ -407,11 +438,13 @@
 
                 }
             }
-            function builtEnvironment(playerList){
+
+            function builtEnvironment(playerList, immunePlayers){
+
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Built Environment";
                 document.getElementById('information').innerHTML = "Guess the name of a card in your opponent's hand to knock them out of the round";
-                appendPlayersList(playerList);
+                appendPlayersList(playerList, immunePlayers);
                 //Append roles
                 var roleLabel = document.createElement("label");
                 document.getElementById('modal-body').appendChild(roleLabel);
@@ -434,25 +467,36 @@
                         roles.appendChild(child);
                     }
                 }
+
             }
 
-            function arts(playerList) {
+            function arts(playerList, immunePlayers) {
                 // to take care of arts
                 // playing arts lets us take a look at other people's hands
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Arts";
                 document.getElementById('information').innerHTML = "Pick a player to look at their hand!";
-                appendPlayersList(playerList);
+
+                appendPlayersList(playerList, immunePlayers);
             }
 
-            function law(playerList){
+          
+            function law(playerList, immunePlayers){
+
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Law";
                 document.getElementById('information').innerHTML = "Select an opponent and the player with the lower strength card in their hand is knocked out of the round.";
-                appendPlayersList(playerList);
+                appendPlayersList(playerList, immunePlayers);
+            }
+          
+            function science(playerList, immunePlayers) {
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've played Science";
+                document.getElementById('information').innerHTML = "Select an opponent and discard their hand and draw a new card.";
+                appendPlayersList(playerList, immunePlayers);
             }
 
-            function appendPlayersList(playerList){
+            function appendPlayersList(playerList, immunePlayers){
                 //Append players
                 var playersLabel = document.createElement("label");
                 document.getElementById('modal-body').appendChild(playersLabel);
@@ -469,17 +513,28 @@
                     var child = document.createElement("option");
                     console.log(playerId, p)
                     //assign values to the <option>
+
                     if(playerId == playersInRound[p]){
                         child.textContent = playersInRound[p] + " (You)";
                     } else {
                         child.textContent = playersInRound[p];
                     }
                     
+                    // check if the player is immune
+
+                    if (immunePlayers.includes(playersInRound[p])) {
+                        child.textContent = child.textContent + " (Medicine)";
+                        child.value = child.value + " (Medicine)";
+                        // also need to disable this option
+                        child.disabled = true;
+                    }
                     child.value = playersInRound[p];
+                              
                     //attach the mew <option> to the <selection>
                     players.appendChild(child);
                     
                 }
+                // we need to disable 
             }
 
             function submitModal(){
@@ -508,6 +563,13 @@
                         var player = p.options[p.selectedIndex].value;
                         console.log("Emitting target player message");
                         socket.emit('target player', player, cardLastClicked.strength, null);
+                        cardLastClicked = undefined;
+                        break;
+                    case 5:
+                        var p = document.getElementById("playerSelect");
+                        var player = p.options[p.selectedIndex].value;
+                        socket.emit('target player', player, cardLastClicked.strength, null);
+                        cardLastClicked = undefined;
                         break;
                     default:
                         socket.emit('target player', player, cardLastClicked.strength, null);

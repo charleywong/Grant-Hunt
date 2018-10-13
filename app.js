@@ -183,6 +183,7 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
+
   return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
@@ -261,7 +262,7 @@ function turnPhaseOne(playedCard, otherCard){
   //
 
   // Emit message featuring player list indicating phase two of turn
-  play.to(game.players[id]).emit('select player', playedCard, playerList);
+  play.to(game.players[id]).emit('select player', playedCard, playerList, game.immune);
 }
   
 // Prepare for Phase Two of a turn
@@ -317,12 +318,12 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
         play.to(game.players[id]).emit('law tie',  hands, targetPlayer);
         play.to(game.players[targetPlayer]).emit('law tie',  hands, targetPlayer);
       }
-    } else if (playerCard == 5){
+    } else if (playedCard == 5){
       //if player uses Science to make someone discard
       //we tell that player what their new card is
       //(if the new card is a 0 they got eliminated!)
-      play.to(game.players[targetPlayer]).emit('science draw', game.playerHands[targetPlayer]);
-    } else if (playerCard == 6){
+      play.to(game.players[targetPlayer]).emit('science draw', id, cardInfo(game.playerHands[targetPlayer]));
+    } else if (playedCard == 6){
       //if players swap hand with Engineering
       //we tell both players what their new hands are
       play.to(game.players[id]).emit('eng swap', game.playerHands[id]);
