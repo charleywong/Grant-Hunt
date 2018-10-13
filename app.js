@@ -194,7 +194,7 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [8, 7, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1, 1, 1, 1];
+  return [8, 7, 6, 5, 5, 4, 4, 3, 3, 1, 2, 1, 1, 2, 1, 1];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
@@ -202,7 +202,6 @@ function newDeck(){
 
 
 function playersInGame() {
-
   var remainingPlayersInRound = [];
     var remainingPlayersInGame = [];
     for(var i = 0; i < game.players.length; i++){
@@ -218,9 +217,7 @@ function playersInGame() {
     pId = p;
     play.to(game.players[p]).emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, pId);
   }
- 
-  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played);
-  
+  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played, game.immune);
 }
 
 
@@ -233,10 +230,8 @@ function turnPhaseOne(playedCard, otherCard){
   console.log("Initiating turn phase one for player " + game.currentPlayer + ".");
   var id = game.currentPlayer;
   var playerList = [];
-
   //Set the players hand to be the card in hand
   game.playerHands[id] = otherCard;
- 
   // Perform turn's action based on card
   // Check next action based on card
   var output = logic.played_card(game, id, playedCard, otherCard);
@@ -271,13 +266,9 @@ function turnPhaseOne(playedCard, otherCard){
     play.to(game.players[id]).emit('invalid play');
     return;
   } else if(result == 8){
-    turnPhaseTwo(id, 8, 0);
+    eliminatePlayer(id);
+    nextTurn();
   }
-
-  // Potentially check to see if there is noone available to select
-  // Emit a message and proceed to next turn as no players available to select?
-  //
-
   // Emit message featuring player list indicating phase two of turn
   play.to(game.players[id]).emit('select player', playedCard, playerList);
 }
@@ -296,13 +287,13 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   if(playedCard == 1) {
     // Ensure a guess was made/submited
     if(guessedCard != null){
-      var output = logic.guessed_card(game, id, targetPlayer, guessedCard);
-      game = output.game;
-      if(output.result == -8){
+      var result = logic.guessed_card(game, id, targetPlayer, guessedCard);
+      game = result.game;
+      if(result.output == -8){
         eliminate_player(targetPlayer);
-        game.to(game.players[id]).emit('correct guess');
+        play.to(game.players[id]).emit('correct guess');
       } else {
-        game.to(game.players[id]).emit('incorrect guess');
+        play.to(game.players[id]).emit('incorrect guess');
       }
     } else {
       console.log("Error: guard played with no guessed card");
@@ -365,34 +356,25 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
 function nextTurn(){
   console.log("Next turn!");
   // Check to see if the game has reached an end state.
-  console.log(game);
   var output = logic.check_end_game(game);
-  console.log("1");
   game = output.game;
   if (output.output == false) return;
-   
   var id = game.currentPlayer;
-
   //move on to the next player without an empty hand
   id = (id + 1) % 4;
   while(game.playerHands[id] <= 0){
     id = (id + 1) % 4;
   }
   game.currentPlayer = id;
-  
   //upate immunity - if we push onto the right and can only do so on a player's turn, then they should always be on the left on their turn
   if(game.immune.length > 0){
     if(game.immune[0] == id){
       game.splice(0, 1);
     }
   }
-  
-  
   //update players on who is remaining
   playersInGame();
-  
   //player draws a card
-
   var newCard = game.deck.pop();
   play.to(game.players[id]).emit('your turn', id, cardInfo.cardInfo(game.playerHands[id]), cardInfo.cardInfo(newCard));
   
@@ -404,9 +386,9 @@ function nextTurn(){
 
 //eliminates a player from the round, and notifies the front end
 function eliminate_player(playerid){
-  var c = game.playerhands[playerid];
+  var c = game.playerHands[playerid];
   game.display_deck[c]--;
-  game.playerhands[playerid] = 0;
+  game.playerHands[playerid] = 0;
   play.to(game.players[playerid]).emit('eliminated');
   game = logic.check_end_game(game).game;
 }

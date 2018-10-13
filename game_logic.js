@@ -154,7 +154,6 @@ module.exports = {
 
   //checks the state of the game to see if it has reached an end state or not
   check_end_game: function(game) {
-    console.log(game);
     if (game.deck.length == 0) {
       end_game(game);
       return {game:game, output: false};//deck is empty
