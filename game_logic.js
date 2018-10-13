@@ -86,7 +86,7 @@ module.exports = {
       var temp = game.playerHands[id];
       game.playerHands[id] = game.playerHands[player];
       game.playerHands[player] = temp;
-      {game: game, output: 6}
+      return {game: game, output: 6};
     }
   },
 
