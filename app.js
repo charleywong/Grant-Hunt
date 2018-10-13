@@ -184,7 +184,7 @@ function shuffle(deck){
 function newDeck(){
   //preset deck for testing
 
-  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1];
+  return [7, 6, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1,8];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 

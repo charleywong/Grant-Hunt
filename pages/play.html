@@ -187,7 +187,6 @@
             });
 
             socket.on('select player', function(playedCard, playerList, immunePlayers){
-                console.log(playedCard);
                 submitModalButtonSwitch(playedCard);
                 switch (playedCard){
                     case 1: 
@@ -204,7 +203,7 @@
                         break;
                     default:
                         console.log("Emitting BLANK target player message");
-                        socket.emit('target player', player, cardLastClicked, null);
+                        socket.emit('target player', player, cardLastClicked.strength, null);
                         break;
                 }
             });
