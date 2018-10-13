@@ -331,7 +331,9 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
 function nextTurn(){
   console.log("Next turn!");
   // Check to see if the game has reached an end state.
+  console.log(game);
   var output = logic.check_end_game(game);
+  console.log("1");
   game = output.game;
   if (output.output == false) return;
    
