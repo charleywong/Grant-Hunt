@@ -183,20 +183,20 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  //return [8, 7, 6, 5, 4, 4, 3, 3, 2, 2, 1, 1, 1,5, 1, 1];
-  return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
+
+  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1];
+  //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
 
 function playersInGame(){
-
   var remainingPlayersInRound = [];
-    var remainingPlayersInGame = [];
-    for(var i = 0; i < game.players.length; i++){
-      if(game.playerHands[i] != -1){
-        remainingPlayersInGame.push(i);
-      }
-    
+  var remainingPlayersInGame = [];
+  for(var i = 0; i < game.players.length; i++){
+    if(game.playerHands[i] != -1){
+      remainingPlayersInGame.push(i);
+    }
+  
     if(game.playerHands[i] > 0){
       remainingPlayersInRound.push(i);
     }
@@ -277,7 +277,16 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   if(playedCard == 1) {
     // Ensure a guess was made/submited
     if(guessedCard != null){
-      guessed_card(id, targetPlayer, guessedCard);
+      var result = guessed_card(id, targetPlayer, guessedCard);
+      if(result == -8){
+        //targeted player knocked out
+        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, true);
+        play.to(game.players[targetPlayer]).emit('built result', id, targetPlayer, guessedCard, true);
+      } else {
+        //targeted player NOT knocked out
+        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, false);
+        play.to(game.players[targetPlayer]).emit('built result', id ,targetPlayer, guessedCard, false);
+      }
     } else {
       console.log("Error: guard played with no guessed card");
     }
@@ -286,24 +295,28 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     var result = selected_player(id, targetPlayer, playedCard);
     if(result == 0){
       //if targeting a player with medicine immunity
-   play(game.players[id]).emit('invalid play');
+      play(game.players[id]).emit('invalid play');
     } else if(playedCard == 2){
       //if looking at a players hand with arts
       play.to(game.players[id]).emit('arts result',targetPlayer, cardInfo(result));
     } else if(playedCard == 3) {
+      var hands = {};
+      // hands[role] = [playerId, hand compared]
+      hands['player'] = [id, cardInfo(game.playerHands[id])];
+      hands['target'] = [targetPlayer, cardInfo(game.playerHands[targetPlayer])];
       if(result == 8){
         //if player knocks themselves out with Law card
         //tell player and also tell opponent, also show which cards were compared
-        play.to(game.players[id]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
-        play.to(game.players[targetPlayer]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law loss', hands);
+        play.to(game.players[targetPlayer]).emit('law win', hands);
       } else if(result == -8){
         //if player knocks opponent out, it's the other way around
-        play.to(game.players[id]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
-        play.to(game.players[targetPlayer]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law win', hands);
+        play.to(game.players[targetPlayer]).emit('law loss',  hands);
       } else {
         //otherwise it's a tie
-        play.to(game.players[id]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
-        play.to(game.players[targetPlayer]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law tie',  hands, targetPlayer);
+        play.to(game.players[targetPlayer]).emit('law tie',  hands, targetPlayer);
       }
     } else if (playedCard == 5){
       //if player uses Science to make someone discard
@@ -485,8 +498,6 @@ function guessed_card (id, player, card) {
   if (game.deck.length == 0) {
     end_game();
   }
-  //TODO: Notify front end
-
   if (card == game.playerHands[player]) {
     game.display_deck[card]--;
     game.playerHands[player] = 0;
