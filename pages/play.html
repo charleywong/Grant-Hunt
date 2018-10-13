@@ -263,6 +263,11 @@
                 if (cardLastClicked.strength == 1){
                     builtEnvironment();
                 }
+                
+            });
+            
+            socket.on('eliminated', function(){
+            	console.log("I got eliminated!");
             });
 
 
