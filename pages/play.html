@@ -111,7 +111,6 @@
                     var tbody = document.createElement("tbody");
                     tbody.setAttribute("id", "players");
                     table.appendChild(tbody);
-                    console.log(remainingPlayersInRound);
                     for(var p in remainingPlayersInGame){
                         var row = document.createElement("tr");
                         row.setAttribute("name", "player-status");
@@ -119,24 +118,56 @@
                         var roundsWon = document.createElement("td");
                         roundsWon.innerHTML = "0";
                         player.innerHTML = p;
-                        if(!remainingPlayersInRound.includes(p)){
+                        if(!remainingPlayersInRound.includes(remainingPlayersInGame[p])){
                             row.style.opacity = 0.25;
                         }
                         tbody.appendChild(row);
                         row.appendChild(player);
                         row.appendChild(roundsWon);
                     }
+                } else {
+                    //update players count for the round
+                    console.log("updating")
+                    var tr = document.getElementsByName("player-status");
+                    for(var i=0; i < tr.length; i++){
+                        var row = tr[i];
+                        var td = row.getElementsByTagName("td");
+                        var player = td[0];
+                        var roundsWon = td[0];
+                        for(var key in remainingPlayersInRound){
+                            if(remainingPlayersInRound[key] == player.innerHTML){
+                                row.style.opacity = 1;
+                                break;
+                            }
+                            row.style.opacity = 0.25;
+                        }
+                    }
                 }
-                //update players count
-                var tr = document.getElementsByName("player-status");
-                for(var i=0; i < tr.length; i++){
-                    var row = tr[i];
-                    var td = row.getElementsByTagName("td");
-                    var player = td[0];
-                    var roundsWon = td[0];
-                    if(!playersInRound.includes(player.innerHTML)){
-                        row.style.opacity = 0.25;
-                    } 
+                
+                //if the current player is not in the game
+                //we need to remove their cards and tell them that they're out!
+                var stillInRound = false;
+                for(var p in playersInRound){
+                    if(playersInRound[p] == playerId){
+                        stillInRound = true;
+                        console.log("player " + playerId + " is still in the game")
+                        break;
+                    }
+                }
+                if(!stillInRound && !document.getElementById('out')){
+                    console.log("player " + playerId + " is NOT in the game")
+                    //make sure they have no cards in their hand
+                    removeCardData("card1");
+                    removeCardData("card2");
+                    document.getElementById("turnstatus").innerHTML = "";
+                    //display you're out message!
+                    var row = document.getElementById("cards");
+                    var message = document.createElement("h1");
+                    message.innerHTML = "YOU'RE OUT OF THE ROUND!";
+                    message.style.marginLeft = "auto";
+                    message.style.marginRight = "auto";
+                    message.setAttribute("id", "out");
+                    row.appendChild(message);
                 }
 
             });
@@ -178,22 +209,17 @@
                 }
             });
 
-            socket.on('arts result', function(targetPlayer, cardInfo) {
-                // TODO: Add sick transition effect at a later date
-                $('#gameModal').modal('show');
-                document.getElementById('modal-title').innerHTML = "You've played Arts";
-                document.getElementById('information').innerHTML = "Player " +  targetPlayer + " has this card: " + cardInfo.name;
-            });
-
             socket.on('science draw', function(playedPlayer, newCard) {
                 // draw new card for targeted player
                 // set it for card 2
                 console.log("science draw");
+                
                 // remove card1 and replace with newCard
                 removeCardData("card1");
                 appendNewCard(newCard, "card1");
                 // notify player that someone has targeted them and their existing card will be discarded
                 $('#gameModal').modal('show');
+                submitModalButtonSwitch(null);
                 document.getElementById('modal-title').innerHTML = "Player " + playedPlayer + " has played Medicine and targeted you!";
                 document.getElementById('information').innerHTML = "As a result, your existing card has been discarded and your new card is: " + newCard.name;
 
@@ -229,7 +255,6 @@
 
                 card2.appendChild(cardData)
             }
-
 
             socket.on('built result', function(playedPlayer, targetPlayer, guessedCard, val){
                 $('#gameModal').modal('show');
@@ -284,7 +309,7 @@
                                                                         "<strong>YOU'VE BEEN KNOCKED OUT OF THE ROUND!</strong>";
             });
 
-             socket.on('law win', function(hands) {
+            socket.on('law win', function(hands) {
                 $('#gameModal').modal('show');
                 //Change modal button to close
                 submitModalButtonSwitch(null);
@@ -302,7 +327,7 @@
                                                                         "<strong>YOU'VE KNOCKED YOUR OPPONENT OUT OF THE ROUND!</strong>";
             });
 
-             socket.on('law tie', function(hands, targetPlayer) {
+            socket.on('law tie', function(hands, targetPlayer) {
                 $('#gameModal').modal('show');
                 //Change modal button to close
                 submitModalButtonSwitch(null);
@@ -319,12 +344,14 @@
                 document.getElementById('information').innerHTML = "Player " +  opponentName + " has the card " + opponentCard + " and so do you!<br>" +
                                                                         "<strong>It's a tie, you both stay in the round!</strong>";
             });
+            
             function removeCardData(cardToRemove) {
                 var card = document.getElementById(cardToRemove);
                 while (card.firstChild) {
                     card.removeChild(card.firstChild);
                 }
             }
+            
             function copyToClipboard() {
                 var textArea = document.createElement("textarea")
             
@@ -438,9 +465,12 @@
 
                 }
             }
+            
+            socket.on('eliminated', function(){
+            	console.log("I got eliminated!");
+            });
 
             function builtEnvironment(playerList, immunePlayers){
-
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've played Built Environment";
                 document.getElementById('information').innerHTML = "Guess the name of a card in your opponent's hand to knock them out of the round";
@@ -479,7 +509,6 @@
 
                 appendPlayersList(playerList, immunePlayers);
             }
-
           
             function law(playerList, immunePlayers){
 
@@ -511,7 +540,6 @@
                 for (var p in playersInRound){
                     //create an <option> to add the <select>
                     var child = document.createElement("option");
-                    console.log(playerId, p)
                     //assign values to the <option>
 
                     if(playerId == playersInRound[p]){
@@ -685,22 +713,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- <tr>
-                                    <th scope="row">1</th>
-                                    <td>0</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">2</th>
-                                    <td>0</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">3</th>
-                                    <td>0</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">4</th>
-                                    <td>0</td>
-                                </tr> -->
                             </tbody>
                         </table>
                     </div>
@@ -708,7 +720,7 @@
                 <div class="game text-center">
                     <p id="status" class="game-status"></p>
                     <p id="turnstatus" class="game-status"></p>
-                    <div class="row">
+                    <div class="row" id="cards">
                         <div class="col-6" id="card1"></div>
                         <div class="col-6" id="card2"></div>
                     </div>
