@@ -184,20 +184,22 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [8, 7, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1, 1, 1, 1];
+
+  return [7, 6, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1,8];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
 
-function playersInGame() {
+
+function playersInGame(){
 
   var remainingPlayersInRound = [];
-    var remainingPlayersInGame = [];
-    for(var i = 0; i < game.players.length; i++){
-      if(game.playerHands[i] != -1){
-        remainingPlayersInGame.push(i);
-      }
-    
+  var remainingPlayersInGame = [];
+  for(var i = 0; i < game.players.length; i++){
+    if(game.playerHands[i] != -1){
+      remainingPlayersInGame.push(i);
+    }
+  
     if(game.playerHands[i] > 0){
       remainingPlayersInRound.push(i);
     }
@@ -265,14 +267,15 @@ function turnPhaseOne(playedCard, otherCard){
   //
 
   // Emit message featuring player list indicating phase two of turn
-  play.to(game.players[id]).emit('select player', playedCard, playerList);
+  play.to(game.players[id]).emit('select player', playedCard, playerList, game.immune);
 }
   
 // Prepare for Phase Two of a turn
 // This phase allows a player to select another player
 // And performs the action corresponding to their card
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
-  console.log("Initiating turn phase one for player " + game.currentPlayer + ".");
+  console.log("Initiating turn phase two for player " + game.currentPlayer + ".");
+  console.log(playedCard, guessedCard);
   var id = game.currentPlayer;
   // Perform action based on card
   // If the card was Built environment, check the guess
@@ -280,6 +283,18 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     // Ensure a guess was made/submited
     if(guessedCard != null){
       game = logic.guessed_card(game, id, targetPlayer, guessedCard).game;
+      var output = logic.guessed_card(id, targetPlayer, guessedCard);
+      var result = output.output;
+      game = output.game;
+      if(result == -8){
+        //targeted player knocked out
+        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, true);
+        play.to(game.players[targetPlayer]).emit('built result', id, targetPlayer, guessedCard, true);
+      } else {
+        //targeted player NOT knocked out
+        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, false);
+        play.to(game.players[targetPlayer]).emit('built result', id ,targetPlayer, guessedCard, false);
+      }
     } else {
       console.log("Error: guard played with no guessed card");
     }
@@ -290,35 +305,40 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     game = output.game;
     if(result == 0){
       //if targeting a player with medicine immunity
-      socket.to(game.players[id]).emit('invalid play');
+      play(game.players[id]).emit('invalid play');
     } else if(playedCard == 2){
       //if looking at a players hand with arts
       socket.to(game.players[id]).emit('arts result', cardInfo.cardInfo(result));
+
     } else if(playedCard == 3) {
+      var hands = {};
+      // hands[role] = [playerId, hand compared]
+      hands['player'] = [id, cardInfo(game.playerHands[id])];
+      hands['target'] = [targetPlayer, cardInfo(game.playerHands[targetPlayer])];
       if(result == 8){
         //if player knocks themselves out with Law card
         //tell player and also tell opponent, also show which cards were compared
-        socket.to(game.players[id]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
-        socket.to(game.players[targetPlayer]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law loss', hands);
+        play.to(game.players[targetPlayer]).emit('law win', hands);
       } else if(result == -8){
         //if player knocks opponent out, it's the other way around
-        socket.to(game.players[id]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
-        socket.to(game.players[targetPlayer]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law win', hands);
+        play.to(game.players[targetPlayer]).emit('law loss',  hands);
       } else {
         //otherwise it's a tie
-        socket.to(game.players[id]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
-        socket.to(game.players[targetPlayer]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
+        play.to(game.players[id]).emit('law tie',  hands, targetPlayer);
+        play.to(game.players[targetPlayer]).emit('law tie',  hands, targetPlayer);
       }
-    } else if (playerCard == 5){
+    } else if (playedCard == 5){
       //if player uses Science to make someone discard
       //we tell that player what their new card is
       //(if the new card is a 0 they got eliminated!)
-      socket.to(game.players[targetPlayer]).emit('science draw', game.playerHands[targetPlayer]);
-    } else if (playerCard == 6){
+      play.to(game.players[targetPlayer]).emit('science draw', id, cardInfo(game.playerHands[targetPlayer]));
+    } else if (playedCard == 6){
       //if players swap hand with Engineering
       //we tell both players what their new hands are
-      socket.to(game.players[id]).emit('eng swap', game.playerHands[id]);
-      socket.to(game.players[targetPlayer]).emit('eng swap', game.playerHands[targetPlayer]);
+      play.to(game.players[id]).emit('eng swap', game.playerHands[id]);
+      play.to(game.players[targetPlayer]).emit('eng swap', game.playerHands[targetPlayer]);
     }
   }
   // Proceed to next turn
@@ -356,9 +376,10 @@ function nextTurn(){
   playersInGame();
   
   //player draws a card
-
+  console.log("drawing new card for next player " + id);
   var newCard = game.deck.pop();
   play.to(game.players[id]).emit('your turn', id, cardInfo.cardInfo(game.playerHands[id]), cardInfo.cardInfo(newCard));
+
   
   
 }
@@ -377,8 +398,6 @@ function play_log(id) {
 function get_hand(id) {
   return game.playerHands[id];
 }
-
-// Return information regarding a card based on its value
 
 // Get a users in game ID based on their unique ID
 function getUserByUId(uid){
