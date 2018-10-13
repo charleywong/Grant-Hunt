@@ -194,21 +194,20 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [8, 7, 6, 5, 5, 4, 4, 3, 3, 1, 2, 1, 1, 2, 1, 1];
+  return [7, 6, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1,8];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
 
 
-
-function playersInGame() {
+function playersInGame(){
   var remainingPlayersInRound = [];
-    var remainingPlayersInGame = [];
-    for(var i = 0; i < game.players.length; i++){
-      if(game.playerHands[i] != -1){
-        remainingPlayersInGame.push(i);
-      }
-    
+  var remainingPlayersInGame = [];
+  for(var i = 0; i < game.players.length; i++){
+    if(game.playerHands[i] != -1){
+      remainingPlayersInGame.push(i);
+    }
+  
     if(game.playerHands[i] > 0){
       remainingPlayersInRound.push(i);
     }
@@ -290,6 +289,7 @@ function turnPhaseOne(playedCard, otherCard){
   }
   
   return playerList;
+
 }
   
   
@@ -300,6 +300,7 @@ function turnPhaseOne(playedCard, otherCard){
 // And performs the action corresponding to their card
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   console.log("Initiating turn phase two for player " + game.currentPlayer + ".");
+  console.log(playedCard, guessedCard);
   var id = game.currentPlayer;
   //two values used to store the message we emit
   //used for testing purposes ONLY
@@ -313,14 +314,19 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
       var result = logic.guessed_card(game, id, targetPlayer, guessedCard);
       game = result.game;
       if(result.output == -8){
-        play.to(game.players[id]).emit('correct guess');
-        emitMessage1 = ['correct guess']
+        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, true);
+        emitMessage1 = ['built result', id, targetPlayer, guessedCard, true];
+        play.to(game.players[targetPlayer]).emit('built result', id, targetPlayer, guessedCard, true);
+        emitMessage2 = ['built result', id, targetPlayer, guessedCard, true];
         if(eliminate_player(targetPlayer) == false) {
           return {message1: emitMessage1, message2: emitMessage2};
         } 
       } else {
-        play.to(game.players[id]).emit('incorrect guess');
-        emitMessage1 = ['incorrect guess'];
+        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, false);
+        emitMessage1 = ['built result', id, targetPlayer, guessedCard, false];
+        play.to(game.players[targetPlayer]).emit('built result', id ,targetPlayer, guessedCard, false);
+        emitMessage2 = ['built result', id ,targetPlayer, guessedCard, false];
+
       }
     } else {
       console.log("Error: guard played with no guessed card");
@@ -341,9 +347,14 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
       play.to(game.players[id]).emit('arts result', cardInfo.cardInfo(result));
       emitMessage1 = ['arts result', cardInfo.cardInfo(result)]
     } else if(playedCard == 3) {
+      var hands = {};
+      // hands[role] = [playerId, hand compared]
+      //hands['player'] = [id, cardInfo(game.playerHands[id])];
+      //hands['target'] = [targetPlayer, cardInfo(game.playerHands[targetPlayer])];
       if(result == 8){
         //if player knocks themselves out with Law card
         //tell player and also tell opponent, also show which cards were compared
+//<<<<<<< HEAD
         play.to(game.players[id]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
         emitMessage1 = ['law loss', game.playerHands[id], game.playerHands[targetPlayer]];
         play.to(game.players[targetPlayer]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
@@ -366,6 +377,18 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
         emitMessage1 = ['law tie', game.playerHands[id], game.playerHands[targetPlayer]];
         play.to(game.players[targetPlayer]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
         emitMessage2 = ['law tie', game.playerHands[id], game.playerHands[targetPlayer]];
+/*=======
+        play.to(game.players[id]).emit('law loss', hands);
+        play.to(game.players[targetPlayer]).emit('law win', hands);
+      } else if(result == -8){
+        //if player knocks opponent out, it's the other way around
+        play.to(game.players[id]).emit('law win', hands);
+        play.to(game.players[targetPlayer]).emit('law loss',  hands);
+      } else {
+        //otherwise it's a tie
+        play.to(game.players[id]).emit('law tie',  hands, targetPlayer);
+        play.to(game.players[targetPlayer]).emit('law tie',  hands, targetPlayer);
+>>>>>>> master*/
       }
     } else if (playedCard == 5){
       //if player uses Science to make someone discard
@@ -380,6 +403,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
         play.to(game.players[targetPlayer]).emit('science draw', cardInfo.cardInfo(game.playerHands[targetPlayer]));
         emitMessage1 = ['science draw', cardInfo.cardInfo(game.playerHands[targetPlayer])];
       }
+
     } else if (playedCard == 6){
       //if players swap hand with Engineering
       //we tell both players what their new hands are
@@ -425,6 +449,7 @@ function nextTurn(){
   var newCard = game.deck.pop();
   play.to(game.players[id]).emit('your turn', id, cardInfo.cardInfo(game.playerHands[id]), cardInfo.cardInfo(newCard));
   console.log("Player " + id + " draws " + cardInfo.cardInfo(newCard).name + ".");
+
   
   
 }
@@ -476,6 +501,7 @@ function play_log(id) {
 function get_hand(id) {
   return game.playerHands[id];
 }
+
 
 
 
@@ -749,17 +775,21 @@ function run_tests(){
   //turnPhaseTwo(targetPlayer, playedCard, guessedCard)		(RETURNS EMIT MESSAGES)
   
   console.log("Turn 1, Phase 1: Player 0 selects built environment card.");
+
+
   console.log(game.deck);
   assert(listCmp(game.deck, [7, 8, 1, 5, 3, 4, 1, 2, 3, 6, 2]));
   r = turnPhaseOne(1, 1);
   assert(listCmp(r,[1, 2, 3]));
   
+  
   console.log("Turn 1, Phase 2: Player 0 targets player 1 and guesses UNSW (incorrectly).");
   r = turnPhaseTwo(1, 1, 8);
-  assert(r.message1.length == 1);
-  assert(r.message1[0] = 'incorrect guess');
+  assert(listCmp(r.message1, ['built result', 0, 1, 8, false]));
+  assert(listCmp(r.message2, ['built result', 0, 1, 8, false]));
   assert(game.playerHands[0] == 1);
   assert(game.playerHands[1] != 0);
+  
   
   console.log("Turn 2, Phase 1: Player 1 selects Arts card.");
   assert(listCmp(game.deck, [7, 8, 1, 5, 3, 4, 1, 2, 3, 6]));
@@ -818,7 +848,8 @@ function run_tests(){
   console.log("Turn 5, Phase 2: Player 0 targets Player 2 and guesses Engineering (correctly). Player 2 is eliminated.");
   assert(game.playerHands[2] == 6);
   r = turnPhaseTwo(2, 1, 6);
-  assert(listCmp(r.message1, ['correct guess']));
+  assert(listCmp(r.message1, ['built result', 0, 2, 6, true]));
+  assert(listCmp(r.message2, ['built result', 0, 2, 6, true]));
   assert(game.playerHands[2] == 0);
   console.log(game.playerHands[0]);
   assert(game.playerHands[0] == 1);
