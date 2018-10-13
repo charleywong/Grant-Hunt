@@ -182,6 +182,7 @@
                 document.querySelector("div[id='card1'] > div").setAttribute("onclick", "saveInfo(this)");
             });
 
+
             socket.on('built result', function(playedPlayer, targetPlayer, guessedCard, val){
                 $('#gameModal').modal('show');
                 //Change modal button to close
@@ -235,7 +236,7 @@
                                                                         "<strong>YOU'VE BEEN KNOCKED OUT OF THE ROUND!</strong>";
             });
 
-             socket.on('law win', function(hands) {
+            socket.on('law win', function(hands) {
                 $('#gameModal').modal('show');
                 //Change modal button to close
                 submitModalButtonSwitch(null);
@@ -270,6 +271,26 @@
                 document.getElementById('information').innerHTML = "Player " +  opponentName + " has the card " + opponentCard + " and so do you!<br>" +
                                                                         "<strong>It's a tie, you both stay in the round!</strong>";
             });
+            socket.on('select player', function(playedCard, playerList){
+                console.log(playedCard);
+                
+                switch (playedCard){
+                    case 1: 
+                        builtEnvironment(playerList);
+                        break;
+                    case 2:
+                        arts(playerList);
+                        break;
+                    case 3:
+                        law(playerList);
+                        break;
+                    default:
+                        console.log("Emitting BLANK target player message");
+                        socket.emit('target player', player, cardLastClicked, null);
+                        break;
+                }
+            });
+
 
             function copyToClipboard() {
                 var textArea = document.createElement("textarea")
@@ -371,25 +392,7 @@
                 }
             }
 
-            socket.on('select player', function(playedCard, playerList){
-                console.log(playedCard);
-                submitModalButtonSwitch(playedCard);
-                switch (playedCard){
-                    case 1: 
-                        builtEnvironment(playerList);
-                        break;
-                    case 2:
-                        arts(playerList);
-                        break;
-                    case 3:
-                        law(playerList);
-                        break;
-                    default:
-                        console.log("Emitting BLANK target player message");
-                        socket.emit('target player', player, cardLastClicked, null);
-                        break;
-                }
-            });
+
 
             function submitModalButtonSwitch(playedCard){
                 var btn =  document.getElementById('modal-submit');
