@@ -464,11 +464,13 @@
                 players.setAttribute("id", "playerSelect");
                 players.setAttribute("name", "playerSelect");
                 players.setAttribute("class", "form-control");
+
                 for (var p in playersInRound){
                     //create an <option> to add the <select>
                     var child = document.createElement("option");
+                    console.log(playerId, p)
                     //assign values to the <option>
-                    if(playerId == p){
+                    if(playerId == playersInRound[p]){
                         child.textContent = playersInRound[p] + " (You)";
                     } else {
                         child.textContent = playersInRound[p];
