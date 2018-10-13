@@ -47,6 +47,9 @@ module.exports = {
     }*/
   },
 
+
+
+
   // Performs action based on card played, and on the player it is played on
   // Returns values if action has further results for front end
   // Return value of selected players hand if playing a Priest
@@ -61,50 +64,39 @@ module.exports = {
     } else if (card == 3) {
       //Determine which players hand has the larger value
       if (game.playerHands[id] < game.playerHands[player]) {
-        // Discard the players card from seen cards and set the player as knocked out
-        game.display_deck[game.playerHands[id]]--;
-        game.playerHands[id] = 0;
-        check_end_game(game);
-        return 8; //current player is knocked out
+        return {game: game, output: 8}; //current player is knocked out
       } else if (game.playerHands[id] > game.playerHands[player]) {
-        // Discard other players card and mark them as knocked out
-        game.display_deck[game.playerHands[player]]--;
-        game.playerHands[player] = 0;
-        check_end_game(game);
-        return -8; //other player is knocked out
+        return {game: game, output: -8}; //other player is knocked out
       } else {
         //nothing happens due to a tie
-        return 1;
+        return {game: game, output: 1};
       }
     } else if (card == 5) {
       // Cause the selected player to discard a card and draw a new card
       var c = game.playerHands[player];
-      game.display_deck[c]--;
+     
       if(c != 8){
+        game.display_deck[c]--;
         game.playerHands[player] = game.deck.pop();
       } else {
-        //if UNSW is discarded they are out
-        game.playerHands[player] = 0;
-        check_end_game(game);
-        return 8;
+        return {game: game, output: 8};
       }
     } else if (card == 6) {
       // Swap hands between current player and selected player
       var temp = game.playerHands[id];
       game.playerHands[id] = game.playerHands[player];
       game.playerHands[player] = temp;
+      {game: game, output: 6}
     }
   },
+
 
   // Check to see if a guess is correct. If so, knock that player out
   // Returns 0 if a guess was incorrect
   // Returns -8 if a guess was correct
   guessed_card: function(game, id, player, card) {
-    check_end_game(game);
     //TODO: Notify front end
     if (card == game.playerHands[player]) {
-      game.display_deck[card]--;
-      game.playerHands[player] = 0;
       return{game: game, output: -8}; //other player is knocked out
     }
     return {game: game, output: 0};

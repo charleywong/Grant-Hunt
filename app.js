@@ -136,6 +136,9 @@ http.listen(3000, function(){
   console.log('listening on *:3000');
 });
 
+
+
+
 // Function to begin Game
 // Will prepare the Game state with a shuffled deck and cards dealt to players
 // From here, will prepare the first players to start the game by dealing a fifth card
@@ -161,6 +164,10 @@ function startGame(){
   playersInGame();
 }
 
+
+
+
+
 // Take a deck of cards (an array of numbers)
 // And shuffle them into a pseudo-random order
 function shuffle(deck){
@@ -180,6 +187,9 @@ function shuffle(deck){
   return deck;
 }
 
+
+
+
 // Prepare a deck for game
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
@@ -187,6 +197,8 @@ function newDeck(){
   return [8, 7, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1, 1, 1, 1];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
+
+
 
 
 function playersInGame() {
@@ -210,6 +222,8 @@ function playersInGame() {
   play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played);
   
 }
+
+
 
 
 // Prepare for Phase One of a turn
@@ -268,6 +282,9 @@ function turnPhaseOne(playedCard, otherCard){
   play.to(game.players[id]).emit('select player', playedCard, playerList);
 }
   
+  
+  
+  
 // Prepare for Phase Two of a turn
 // This phase allows a player to select another player
 // And performs the action corresponding to their card
@@ -279,7 +296,14 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   if(playedCard == 1) {
     // Ensure a guess was made/submited
     if(guessedCard != null){
-      game = logic.guessed_card(game, id, targetPlayer, guessedCard).game;
+      var output = logic.guessed_card(game, id, targetPlayer, guessedCard);
+      game = output.game;
+      if(output.result == -8){
+        eliminate_player(targetPlayer);
+        game.to(game.players[id]).emit('correct guess');
+      } else {
+        game.to(game.players[id]).emit('incorrect guess');
+      }
     } else {
       console.log("Error: guard played with no guessed card");
     }
@@ -300,10 +324,12 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
         //tell player and also tell opponent, also show which cards were compared
         socket.to(game.players[id]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
         socket.to(game.players[targetPlayer]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
+        eliminate_player(id);
       } else if(result == -8){
         //if player knocks opponent out, it's the other way around
         socket.to(game.players[id]).emit('law win', game.playerHands[id], game.playerHands[targetPlayer]);
         socket.to(game.players[targetPlayer]).emit('law loss', game.playerHands[id], game.playerHands[targetPlayer]);
+        eliminate_player(targetPlayer);
       } else {
         //otherwise it's a tie
         socket.to(game.players[id]).emit('law tie', game.playerHands[id], game.playerHands[targetPlayer]);
@@ -312,8 +338,13 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     } else if (playerCard == 5){
       //if player uses Science to make someone discard
       //we tell that player what their new card is
-      //(if the new card is a 0 they got eliminated!)
-      socket.to(game.players[targetPlayer]).emit('science draw', game.playerHands[targetPlayer]);
+      
+      //result of 8 means they discarded UNSW
+      if(result == 8){
+        eliminate_player(targetPlayer);
+      } else {
+        socket.to(game.players[targetPlayer]).emit('science draw', game.playerHands[targetPlayer]);
+      }
     } else if (playerCard == 6){
       //if players swap hand with Engineering
       //we tell both players what their new hands are
@@ -324,6 +355,9 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   // Proceed to next turn
   nextTurn();
 }
+
+
+
 
 // Proceed game state to next turn in game
 // Will update game state stored in system to recognise player
@@ -366,21 +400,40 @@ function nextTurn(){
 }
 
 
+
+
+//eliminates a player from the round, and notifies the front end
+function eliminate_player(playerid){
+  var c = game.playerhands[playerid];
+  game.display_deck[c]--;
+  game.playerhands[playerid] = 0;
+  play.to(game.players[playerid]).emit('eliminated');
+  game = logic.check_end_game(game).game;
+}
+
+
 function remaining_cards() {
   return game.display_deck;
 }
+
+
+
 
 // Track the last play made within the last four turns
 function play_log(id) {
   return game.last_played;
 }
 
+
+
+
 // Get the card in a players hand
 function get_hand(id) {
   return game.playerHands[id];
 }
 
-// Return information regarding a card based on its value
+
+
 
 // Get a users in game ID based on their unique ID
 function getUserByUId(uid){
@@ -392,6 +445,8 @@ function getUserByUId(uid){
   return -1;
 }
 
+
+
 // Get a users in game ID based on their socket ID
 function getUserBySId(sid){
   for(var i = 0; i < users.length; i++){
@@ -402,6 +457,8 @@ function getUserBySId(sid){
   return -1;
 }
 
+
+
 //Get a players in game ID based on their socket ID
 function getPlayerBySId(sid){
   for(var i = 0; i < game.players.length; i++){
@@ -411,6 +468,8 @@ function getPlayerBySId(sid){
   }
   return -1;
 }
+
+
 
 
 function removePlayerBySId(data){
@@ -426,6 +485,9 @@ function removePlayerBySId(data){
   }
   
 }
+
+
+
 
 function addNewUser(UId, socket){
   var SId = socket.id;
@@ -453,43 +515,18 @@ function addNewUser(UId, socket){
   //update the page to show how many users are connected
   play.emit('update', users.length);
 }
-/*
-//returns true if there are at least 2 players remaining, otherwise returns false and sets the winner using playerHands
-function remaining_players() {
-  var flag = false;
-  var id = -1;
-  for (var i = 0; i < 4; i++) {
-    if (game.playerHands[i] != 0) {
-      id = i;
-      if (flag) return true;
-      flag = true;
-    }
-  }
-  
-  for (var i = 0; i < 4; i++) {
-    if (i == id) {
-      game.playerHands[i] = 1;
-    } else {
-      game.playerHands[i] = 0;
-    }
-  }
-  return false;
-}
 
-//checks the state of the game to see if it has reached an end state or not
-function check_end_game() {
-  if (game.deck.length == 0) {
-    end_game();
-    return 0;//deck is empty
-  }
 
-  return remaining_players();
-}
-*/
+
+
+
 //create tuple and add to log
 function play_log_tuple (player, card, target, result) {
   game.last_played.push([player, card, target, result]);
 }
+
+
+
 
 //Set dummy values for the game
 function setDummy(){  
@@ -500,6 +537,10 @@ function setDummy(){
   game.display_deck = display_deck;
   game.last_played = [0];
 }
+
+
+
+
 
 //Test Suite
 function run_tests(){
