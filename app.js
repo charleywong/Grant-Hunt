@@ -285,7 +285,7 @@ function turnPhaseOne(playedCard, otherCard){
     nextTurn();
   } else {
     // Emit message featuring player list indicating phase two of turn
-    play.to(game.players[id]).emit('select player', playedCard, playerList);
+    play.to(game.players[id]).emit('select player', playedCard, playerList, game.immune);
   }
   
   return playerList;

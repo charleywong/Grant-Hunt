@@ -445,7 +445,7 @@
                     default:
                         return "Unknown";
                 }
-            });
+            };
             
             socket.on('eliminated', function(){
             	console.log("I got eliminated!");
@@ -539,12 +539,10 @@
                 players.setAttribute("id", "playerSelect");
                 players.setAttribute("name", "playerSelect");
                 players.setAttribute("class", "form-control");
-
                 for (var p in playersInRound){
                     //create an <option> to add the <select>
                     var child = document.createElement("option");
                     //assign values to the <option>
-
                     if(playerId == playersInRound[p]){
                         child.textContent = playersInRound[p] + " (You)";
                     } else {
@@ -552,7 +550,6 @@
                     }
                     
                     // check if the player is immune
-
                     if (immunePlayers.includes(playersInRound[p])) {
                         child.textContent = child.textContent + " (Medicine)";
                         child.value = child.value + " (Medicine)";
