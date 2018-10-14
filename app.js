@@ -344,7 +344,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
       emitMessage1 = ['invalid play'];
     } else if(playedCard == 2){
       //if looking at a players hand with arts
-      play.to(game.players[id]).emit('arts result', cardInfo.cardInfo(result));
+      play.to(game.players[id]).emit('arts result', targetPlayer,cardInfo.cardInfo(result));
       emitMessage1 = ['arts result', cardInfo.cardInfo(result)]
     } else if(playedCard == 3) {
       var hands = {};
