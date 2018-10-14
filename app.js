@@ -388,7 +388,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
           return {message1: emitMessage1, message2: emitMessage2};
         } 
       } else {
-        play.to(game.players[targetPlayer]).emit('science draw', cardInfo.cardInfo(game.playerHands[targetPlayer]));
+        play.to(game.players[targetPlayer]).emit('science draw',id, cardInfo.cardInfo(game.playerHands[targetPlayer]));
         emitMessage1 = ['science draw', cardInfo.cardInfo(game.playerHands[targetPlayer])];
       }
 
@@ -451,7 +451,7 @@ function eliminate_player(playerid){
   var c = game.playerHands[playerid];
   game.display_deck[c]--;
   game.playerHands[playerid] = 0;
-  play.to(game.players[playerid]).emit('eliminated');
+  play.to(game.players[playerid]).emit('eliminated',game.players);
   var result = logic.check_end_game(game);
   game = result.game;
   if(result.output == false) report_end_game();
