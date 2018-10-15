@@ -54,7 +54,6 @@ function played_card(game, id, card, otherCard) {
   }
   //Update the cards visible for players
   game.display_deck[card]--;
-  game.last_played[id] = card;
   //Determine return value based on played card
   if (card == 1 | card == 2 | card == 3 | card == 6) {
     return {game: game, output: 1};//indicator that prompt to select ANOTHER player should be displayed
@@ -76,7 +75,7 @@ function played_card(game, id, card, otherCard) {
 // Return value of selected players hand if playing a Priest
 // Returns 8 or -8 to signify which player is knocked out by a Baron
 function selected_player(game, id, player, card) {
-  if (game.last_played[player] == 4) {
+  if (game.immune.includes(player)) {
     return {game:game, output: 0}; //played handmaid last, can't be targeted
   }
 
