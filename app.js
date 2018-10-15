@@ -136,9 +136,6 @@ http.listen(3000, function(){
   console.log('listening on *:3000');
 });
 
-
-
-
 // Function to begin Game
 // Will prepare the Game state with a shuffled deck and cards dealt to players
 // From here, will prepare the first players to start the game by dealing a fifth card
@@ -165,9 +162,6 @@ function startGame(){
 }
 
 
-
-
-
 // Take a deck of cards (an array of numbers)
 // And shuffle them into a pseudo-random order
 function shuffle(deck){
@@ -188,8 +182,6 @@ function shuffle(deck){
 }
 
 
-
-
 // Prepare a deck for game
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
@@ -197,8 +189,6 @@ function newDeck(){
   return [7, 6, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1,8];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
-
-
 
 function playersInGame(){
   var remainingPlayersInRound = [];
@@ -218,9 +208,6 @@ function playersInGame(){
   }
   play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played, game.immune);
 }
-
-
-
 
 // Prepare for Phase One of a turn
 // This phase takes a players card selection
@@ -289,11 +276,7 @@ function turnPhaseOne(playedCard, otherCard){
   }
   
   return playerList;
-
 }
-  
-  
-  
   
 // Prepare for Phase Two of a turn
 // This phase allows a player to select another player
@@ -406,9 +389,6 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   return {message1: emitMessage1, message2: emitMessage2};
 }
 
-
-
-
 // Proceed game state to next turn in game
 // Will update game state stored in system to recognise player
 // As well as draw a new card for the next player to offer them their turn
@@ -436,13 +416,8 @@ function nextTurn(){
   //player draws a card
   var newCard = game.deck.pop();
   play.to(game.players[id]).emit('your turn', id, cardInfo.cardInfo(game.playerHands[id]), cardInfo.cardInfo(newCard));
-  console.log("Player " + id + " draws " + cardInfo.cardInfo(newCard).name + ".");
-
-  
-  
+  console.log("Player " + id + " draws " + cardInfo.cardInfo(newCard).name + "."); 
 }
-
-
 
 
 //eliminates a player from the round, and notifies the front end
@@ -458,7 +433,6 @@ function eliminate_player(playerid){
   return result.output;
 }
 
-
 function report_end_game(){
   var winners = [];
   for(var i = 0; i < game.playerHands.length; i++){
@@ -469,7 +443,6 @@ function report_end_game(){
   console.log("The game has finished. The winners are: " + winners);
   play.to('players').emit('round finished', winners);
 }
-
 
 function remaining_cards() {
   return game.display_deck;
@@ -482,17 +455,10 @@ function play_log(id) {
   return game.last_played;
 }
 
-
-
-
 // Get the card in a players hand
 function get_hand(id) {
   return game.playerHands[id];
 }
-
-
-
-
 
 // Get a users in game ID based on their unique ID
 function getUserByUId(uid){
@@ -504,8 +470,6 @@ function getUserByUId(uid){
   return -1;
 }
 
-
-
 // Get a users in game ID based on their socket ID
 function getUserBySId(sid){
   for(var i = 0; i < users.length; i++){
@@ -516,8 +480,6 @@ function getUserBySId(sid){
   return -1;
 }
 
-
-
 //Get a players in game ID based on their socket ID
 function getPlayerBySId(sid){
   for(var i = 0; i < game.players.length; i++){
@@ -527,8 +489,6 @@ function getPlayerBySId(sid){
   }
   return -1;
 }
-
-
 
 function removePlayerBySId(data){
   var gameIndex = getPlayerBySId(data);
@@ -541,10 +501,7 @@ function removePlayerBySId(data){
   if(userIndex > -1){
     users.splice(userIndex, 1);
   }
-  
 }
-
-
 
 function addNewUser(UId, socket){
   var SId = socket.id;
@@ -573,15 +530,10 @@ function addNewUser(UId, socket){
   play.emit('update', users.length);
 }
 
-
-
-
 //create tuple and add to log
 function play_log_tuple (player, card, target, result) {
   game.last_played.push([player, card, target, result]);
 }
-
-
 
 
 //Set dummy values for the game
@@ -750,6 +702,7 @@ function run_tests(){
   
   console.log("Testing through game simulation...");
   console.log("Starting new game...");
+  //Start game
   startGame();
   console.log("Rigging deck and hands..");
   game.deck = [7, 8, 1, 5, 3, 4, 1, 2, 3, 6, 2];
@@ -759,18 +712,15 @@ function run_tests(){
   game.playerHands[3] = 4;
   
   var r;
-  //turnPhaseOne(playedCard, otherCard) 					(RETURNS PLAYER LIST)
+  //turnPhaseOne(playedCard, otherCard) 					        (RETURNS PLAYER LIST)
   //turnPhaseTwo(targetPlayer, playedCard, guessedCard)		(RETURNS EMIT MESSAGES)
   
   console.log("Turn 1, Phase 1: Player 0 selects built environment card.");
-
-
-  console.log(game.deck);
   assert(listCmp(game.deck, [7, 8, 1, 5, 3, 4, 1, 2, 3, 6, 2]));
   r = turnPhaseOne(1, 1);
   assert(listCmp(r,[1, 2, 3]));
   
-  
+
   console.log("Turn 1, Phase 2: Player 0 targets player 1 and guesses UNSW (incorrectly).");
   r = turnPhaseTwo(1, 1, 8);
   assert(listCmp(r.message1, ['built result', 0, 1, 8, false]));
@@ -809,7 +759,7 @@ function run_tests(){
   assert(r.message1[0] == 'science draw');
   assert(r.message1[1].strength == 3);
   assert(game.playerHands[3] == 3);
-
+  
   console.log("Turn 4, Phase 1: Player 3 selects Law card.");
   assert(listCmp(game.deck, [7, 8, 1, 5, 3, 4, 1]));
   assert(game.currentPlayer == 3);
@@ -881,8 +831,91 @@ function run_tests(){
   assert(listCmp(game.deck, [7]));
   r = turnPhaseOne(8, 1);
   assert(game.playerHands[0] == 0);
-  assert(listCmp(r, []));
+  assert(listCmp(r, []));  
+
+  console.log("Rigging Deck, testing special situations");
+  console.log("Player plays a Law card and targets player with Princess");
+  startGame();
+  game.deck = [7, 1, 3, 4, 1, 6, 3, 2, 2, 1, 1];
+  game.playerHands[0] = 5;
+  game.playerHands[1] = 8;
+  game.playerHands[2] = 5;
+  game.playerHands[3] = 4;
+
+  console.log("");
+  console.log("Turn 1, Phase 1: Player 0 plays Science card.");
+  assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6, 3, 2, 2, 1, 1]));
+  assert(game.currentPlayer == 0);
+  r = turnPhaseOne(5, 1);
+  assert(r.length == 4);
+  assert(listCmp(r, [0, 1, 2, 3]));
   
+  console.log("Turn 1, Phase 2: Player 0 targets Player 1. Player 1 discards UNSW and is eliminated.");
+  r = turnPhaseTwo(1, 5, 0);  
+  assert(game.playerHands[0] == 1);
+  assert(game.playerHands[1] == 0);
+  assert(game.currentPlayer == 2);
+  assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6, 3, 2, 2, 1]));
+
+  console.log("Turn 2, Phase 1: Player 2 plays Science card.");
+  r = turnPhaseOne(5, 1);
+  assert(r.length == 3);
+  assert(listCmp(r, [0, 2, 3]));
+  
+  console.log("Turn 1, Phase 2: Player 2 targets Player 3. Player 3 discards Medicine and draws Built Environment.");
+  r = turnPhaseTwo(3, 5, 0);
+  assert(r.message1.length == 2);
+  assert(r.message1[0] == 'science draw');
+  assert(r.message1[1].strength == 1);
+
+  assert(game.playerHands[2] == 1);
+  assert(game.playerHands[3] == 1);
+  assert(listCmp(game.immune, []));
+  assert(game.currentPlayer == 3);
+  assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6, 3, 2]));
+
+  console.log("Turn 3, Phase 1: Player 3 plays Law card.");
+  r = turnPhaseOne(3, 1);
+  assert(r.length == 2);
+  assert(listCmp(r, [0, 2]));
+  
+  console.log("Turn 3, Phase 2: Player 3 targets Player 0.");
+  r = turnPhaseTwo(0, 3, 0);
+
+  assert(r.message1[0] == 'law tie');
+  assert(r.message1[1]['player'][0] == 3);
+  assert(r.message1[1]['player'][1].strength == 1);
+  assert(r.message1[1]['target'][0] == 0);
+  assert(r.message1[1]['target'][1].strength == 1);
+  assert(r.message2[0] == 'law tie');
+  assert(r.message2[1]['player'][0] == 3);
+  assert(r.message2[1]['player'][1].strength == 1);
+  assert(r.message2[1]['target'][0] == 0);
+  assert(r.message2[1]['target'][1].strength == 1);
+  assert(game.playerHands[0] == 1);
+  assert(game.playerHands[3] == 1);
+  assert(game.currentPlayer == 0);
+
+  assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6, 3]));
+
+  console.log("Turn 4, Phase 1: Player 0 rigged to play Engineering and receive UNSW.");
+  game.playerHands[0] = 6;
+  game.playerHands[3] = 8;
+  r = turnPhaseOne(6, 2, 0);
+  assert(r.length == 2);
+  assert(listCmp(r, [2, 3]));
+
+  console.log("Turn 4, Phase 2: Player 0 trades with player 3.");
+  r = turnPhaseTwo(3, 6, 2);
+  assert(r.message1[0] == 'eng swap');
+  assert(r.message1[1] == 8);
+  assert(r.message2[0] == 'eng swap');
+  assert(r.message2[1] == 2);
+
+  assert(game.playerHands[0] == 8);
+  assert(game.playerHands[3] == 2);
+  assert(game.currentPlayer == 2);
+  assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6]));
 
   console.log("Tests concluded.");
 }
