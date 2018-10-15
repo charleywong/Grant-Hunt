@@ -229,7 +229,6 @@
                             message.innerHTML = message.innerHTML + ' ' + winners[i] + ', ';
                         }
                     }
-                    // m
                     message.innerHTML += " are the winners of this round!";
                 }
 
@@ -240,9 +239,8 @@
                 row.appendChild(message);
 
                 // we also need to increment the winner's rounds won
-                // var winnerInTable = document.querySelector("tbody[id='players'] > tr[name='player-status'][style='opacity:1;'] > td");
-                // winnerInTable.innerHTML = 1;
-
+                var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(4) > td:nth-child(2)");
+                winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
 
             });
 
