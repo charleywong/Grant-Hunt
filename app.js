@@ -150,6 +150,7 @@ function startGame(){
     var card = game.deck.pop();
     game.playerHands[i] = card;
     game.last_played.push(0);
+    game.immune.push(false);
     play.to(game.players[i]).emit('start game', cardInfo.cardInfo(card));
   }
 
@@ -345,11 +346,13 @@ function nextTurn(){
   game.currentPlayer = id;
   
   //upate immunity - if we push onto the right and can only do so on a player's turn, then they should always be on the left on their turn
-  if(game.immune.length > 0){
+  /*if(game.immune.length > 0){
     if(game.immune[0] == id){
       game.splice(0, 1);
     }
-  }
+  }*/
+
+  //changed immunity to be true/false, gets updated inside game_logic functions instead of here
   
   
   //update players on who is remaining
@@ -376,6 +379,11 @@ function play_log(id) {
 // Get the card in a players hand
 function get_hand(id) {
   return game.playerHands[id];
+}
+
+//gets immunity status of all players
+function get_immune_players() {
+  return game.immune;
 }
 
 // Return information regarding a card based on its value

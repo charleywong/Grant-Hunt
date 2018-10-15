@@ -15,6 +15,7 @@ module.exports = {
   // Return value of 7 indicates that the play is invalid, Business must be played
   // Return value of 8 indicates that the player has played UNSW and is knocked out
   played_card: function(game, id, card, otherCard) {
+    game.immune[id] = false;
     // Ensure the move was valid
     // The Countess can lead to invalid moves so needs to be checked
     if ((otherCard == 5 || otherCard == 6) && card == 7) {
@@ -30,6 +31,9 @@ module.exports = {
     //Determine return value based on played card
     if (card == 1 | card == 2 | card == 3 | card == 6) {
       return {game: game, output: 1};//indicator that prompt to select ANOTHER player should be displayed
+    } else if (card == 4) {
+      game.immune[id] = true;
+      return {game: game, output: 0};
     } else if (card == 5) {
       return {game: game, output: 5};//prompt to display all players including yourself
     } else if (card == 8) {
@@ -52,7 +56,7 @@ module.exports = {
   // Return value of selected players hand if playing a Priest
   // Returns 8 or -8 to signify which player is knocked out by a Baron
   selected_player: function(game, id, player, card) {
-    if (game.last_played[player] == 4) {
+    if (game.immune[player]) {
       return {game:game, output: 0}; //played handmaid last, can't be targeted
     }
 
