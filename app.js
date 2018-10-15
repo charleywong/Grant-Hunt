@@ -150,7 +150,7 @@ function startGame(){
     //Deal card
     var card = game.deck.pop();
     game.playerHands[i] = card;
-    game.immune.push(false);
+    game.immune[i] = false;
     play.to(game.players[i]).emit('start game', cardInfo.cardInfo(card));
   }
 
@@ -317,20 +317,13 @@ function turnPhaseOne(playedCard, otherCard){
   }
   //check to see if all targetable players are immune
   var allImmune = true;
-  /*
+
   for(var j = 0; j < playerList.length; j++){
-    if(!game.immune.includes(playerList[j])){
+    if(!game.immune[playerList[j]]){
       allImmune = false;
     }
   }
-  */
-
-  for(var j = 0; j < 4; j++){
-    if(!game.immune[j]){
-      allImmune = false;
-    }
-  }
-
+  
   if(allImmune){
     //emit message saying all are immune and then skip to next turn
     play.to(game.players[id]).emit('all immune');
@@ -479,14 +472,7 @@ function nextTurn(){
     id = (id + 1) % 4;
   }
   game.currentPlayer = id;
-  //upate immunity - if we push onto the right and can only do so on a player's turn, then they should always be on the left on their turn
-  /*if(game.immune.length > 0){
-    if(game.immune[0] == id){
-      game.immune.splice(0, 1);
-    }
-  }*/
-
-  //changed immunity to be true/false, gets updated inside game_logic functions instead of here
+  game.immune[id] = false;
   //update players on who is remaining
   playersInGame();
   //player draws a card
@@ -881,17 +867,18 @@ function run_tests(){
   assert(listCmp(game.deck, [7, 8, 1, 5, 3]));
   r = turnPhaseOne(4, 1);
   assert(listCmp(r, []));
-  assert(game.immune.includes(1));
+  assert(game.immune[1]);
   
   console.log("Turn 7, Phase 1: Player 0 selects Built Environment card. All other players are immune so the card is discarded without effect.");
   assert(listCmp(game.deck, [7, 8, 1, 5]));
   assert(game.playerHands[0] == 1);
-  assert(game.immune.includes(1));
   r = turnPhaseOne(1, 3);
   assert(game.playerHands[0] == 3);
 
   console.log("Turn 8, Phase 1: Player 1 selects Science card.");
-  assert(listCmp(game.immune, []));
+  assert(game.currentPlayer == 1);
+  assert(listCmp(game.immune, [false, false, false, false]));
+  console.log(game.deck);
   assert(listCmp(game.deck, [7, 8, 1]));
   r = turnPhaseOne(5, 1);
   assert(listCmp(r, [0, 1]));
@@ -946,7 +933,7 @@ function run_tests(){
 
   assert(game.playerHands[2] == 1);
   assert(game.playerHands[3] == 1);
-  assert(listCmp(game.immune, []));
+  assert(listCmp(game.immune, [false, false, false, false]));
   assert(game.currentPlayer == 3);
   assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6, 3, 2]));
 
