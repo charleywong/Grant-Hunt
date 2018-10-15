@@ -40,7 +40,7 @@ var game =  { players: [],
               currentPlayer: 0,
               deck: deck,
               display_deck: display_deck,
-              last_played: [],
+              history: [],
               immune: []
             };
             
@@ -136,15 +136,13 @@ http.listen(3000, function(){
   console.log('listening on *:3000');
 });
 
-
-
-
 // Function to begin Game
 // Will prepare the Game state with a shuffled deck and cards dealt to players
 // From here, will prepare the first players to start the game by dealing a fifth card
 // And starting first players game
 function startGame(){
   console.log("Starting game.");
+  game.history.push("Starting new round...");
   //Shuffle the deck
   game.deck = newDeck();
   //every player draws one card
@@ -152,7 +150,7 @@ function startGame(){
     //Deal card
     var card = game.deck.pop();
     game.playerHands[i] = card;
-    game.last_played.push(0);
+    game.immune[i] = false;
     play.to(game.players[i]).emit('start game', cardInfo.cardInfo(card));
   }
 
@@ -163,9 +161,6 @@ function startGame(){
   console.log("New game started. It is player " + id + "'s turn");
   playersInGame();
 }
-
-
-
 
 
 // Take a deck of cards (an array of numbers)
@@ -188,16 +183,65 @@ function shuffle(deck){
 }
 
 
-
-
 // Prepare a deck for game
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [7, 6, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1,8];
+  return [7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3, 1, 1, 1, 1, 8];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
+
+
+//create tuple and add to log
+function play_log_tuple (player, card, guessedCard, target, result) {
+  var string = "Player " + player + " ";
+  switch(card){
+    case 1:
+      string = string + "played Built Environment. They guessed Player " + target + " had " + cardInfo.cardInfo(guessedCard).name + ", ";
+      if(result == -8){
+        string = string + "and was correct! Player " + target + " is eliminated from the round."; 
+      } else {
+        string = string + "but was incorrect.";
+      }
+      break;
+    case 2:
+      string = string + "played Arts to view Player " + target + "'s hand.";
+      break;
+    case 3:
+      string = string + "targeted Player " + target + " with a Law card, "
+      if(result == 8){
+        string = string + "and lost! Player " + player + " is eliminated from the round.";
+      } else {
+        string = string + "and won! Player " + target + " is eliminated from the round."; 
+      }
+      break;
+    case 4: 
+      string = string + "played a Medicine card. They can not be targeted by cards until their next turn.";
+      break;
+    case 5:
+      string = string + "targeted " + ((target == player)?"themselves":("Player " + target)) + " with a Science card. They discarded " + cardInfo.cardInfo(result).name;
+      if(result == 8){
+        string = string + " and were therefore eliminated from the round!.";
+      } else {
+        string = string + ".";
+      }
+      break;
+    case 6:
+      string = string + "played Engineering to swap hands with Player " + target + ".";
+      break;
+    case 7:
+      string = string + "discarded their Business card.";
+      break;
+    case 8:
+      string = string + "discarded UNSW, and are eliminated from the round!";
+      break;
+    default:
+      string = "Error handling play history: Unknown card played.";  
+  }
+  console.log(string);
+  game.history.push(string);
+}
 
 
 function playersInGame(){
@@ -216,11 +260,8 @@ function playersInGame(){
     pId = p;
     play.to(game.players[p]).emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, pId);
   }
-  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.last_played, game.immune);
+  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
 }
-
-
-
 
 // Prepare for Phase One of a turn
 // This phase takes a players card selection
@@ -242,6 +283,7 @@ function turnPhaseOne(playedCard, otherCard){
     return playerList;
   } else if (result == 0){
      // Proceed with game. No second phase needed
+     play_log_tuple (id, playedCard, -1, -1, -1);
      nextTurn();
      return playerList;
   } else if(result == 1){
@@ -265,6 +307,7 @@ function turnPhaseOne(playedCard, otherCard){
     play.to(game.players[id]).emit('invalid play');
     return playerList;
   } else if(result == 8){
+    play_log_tuple (id, 8, -1, -1, -1);
     if(eliminate_player(id) == false) {
       return playerList;
     } else {
@@ -274,14 +317,17 @@ function turnPhaseOne(playedCard, otherCard){
   }
   //check to see if all targetable players are immune
   var allImmune = true;
+
   for(var j = 0; j < playerList.length; j++){
-    if(!game.immune.includes(playerList[j])){
+    if(!game.immune[playerList[j]]){
       allImmune = false;
     }
   }
+  
   if(allImmune){
     //emit message saying all are immune and then skip to next turn
     play.to(game.players[id]).emit('all immune');
+    console.log("All immune");
     nextTurn();
   } else {
     // Emit message featuring player list indicating phase two of turn
@@ -289,18 +335,13 @@ function turnPhaseOne(playedCard, otherCard){
   }
   
   return playerList;
-
 }
-  
-  
-  
   
 // Prepare for Phase Two of a turn
 // This phase allows a player to select another player
 // And performs the action corresponding to their card
 function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
   console.log("Initiating turn phase two for player " + game.currentPlayer + ".");
-  console.log(playedCard, guessedCard);
   var id = game.currentPlayer;
   //two values used to store the message we emit
   //used for testing purposes ONLY
@@ -318,6 +359,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
         emitMessage1 = ['built result', id, targetPlayer, guessedCard, true];
         play.to(game.players[targetPlayer]).emit('built result', id, targetPlayer, guessedCard, true);
         emitMessage2 = ['built result', id, targetPlayer, guessedCard, true];
+        
         if(eliminate_player(targetPlayer) == false) {
           return {message1: emitMessage1, message2: emitMessage2};
         } 
@@ -326,8 +368,8 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
         emitMessage1 = ['built result', id, targetPlayer, guessedCard, false];
         play.to(game.players[targetPlayer]).emit('built result', id ,targetPlayer, guessedCard, false);
         emitMessage2 = ['built result', id ,targetPlayer, guessedCard, false];
-
       }
+      play_log_tuple (id, playedCard, guessedCard, targetPlayer, result.output);
     } else {
       console.log("Error: guard played with no guessed card");
       emitMessage1 = ['invalid play'];
@@ -342,6 +384,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
       //if targeting a player with medicine immunity
       play.to(game.players[id]).emit('invalid play');
       emitMessage1 = ['invalid play'];
+      return {message1: emitMessage1, message2: emitMessage2};
     } else if(playedCard == 2){
       //if looking at a players hand with arts
       play.to(game.players[id]).emit('arts result', targetPlayer,cardInfo.cardInfo(result));
@@ -359,6 +402,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
         play.to(game.players[targetPlayer]).emit('law win', hands);
         emitMessage2 = ['law win', hands];
         if(eliminate_player(id) == false) {
+          play_log_tuple (id, playedCard, guessedCard, targetPlayer, result);
           return {message1: emitMessage1, message2: emitMessage2};
         }
       } else if(result == -8){
@@ -368,6 +412,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
         play.to(game.players[targetPlayer]).emit('law loss', hands);
         emitMessage2 = ['law loss', hands];
         if(eliminate_player(targetPlayer) == false) {
+          play_log_tuple (id, playedCard, guessedCard, targetPlayer, result);
           return {message1: emitMessage1, message2: emitMessage2};
         } 
       } else {
@@ -385,6 +430,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
       //result of 8 means they discarded UNSW
       if(result == 8){
         if(eliminate_player(targetPlayer) == false) {
+          play_log_tuple (id, playedCard, guessedCard, targetPlayer, result);
           return {message1: emitMessage1, message2: emitMessage2};
         } 
       } else {
@@ -400,14 +446,12 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
       play.to(game.players[targetPlayer]).emit('eng swap', game.playerHands[targetPlayer]);
       emitMessage2 = ['eng swap', game.playerHands[targetPlayer]];
     }
+    play_log_tuple (id, playedCard, guessedCard, targetPlayer, result);
   }
   // Proceed to next turn
   nextTurn();
   return {message1: emitMessage1, message2: emitMessage2};
 }
-
-
-
 
 // Proceed game state to next turn in game
 // Will update game state stored in system to recognise player
@@ -417,7 +461,10 @@ function nextTurn(){
   // Check to see if the game has reached an end state.
   var output = logic.check_end_game(game);
   game = output.game;
-  if (output.output == false) return;
+  if (output.output == false){
+    report_end_game();
+    return;
+  }
   var id = game.currentPlayer;
   //move on to the next player without an empty hand
   id = (id + 1) % 4;
@@ -425,24 +472,14 @@ function nextTurn(){
     id = (id + 1) % 4;
   }
   game.currentPlayer = id;
-  //upate immunity - if we push onto the right and can only do so on a player's turn, then they should always be on the left on their turn
-  if(game.immune.length > 0){
-    if(game.immune[0] == id){
-      game.immune.splice(0, 1);
-    }
-  }
+  game.immune[id] = false;
   //update players on who is remaining
   playersInGame();
   //player draws a card
   var newCard = game.deck.pop();
   play.to(game.players[id]).emit('your turn', id, cardInfo.cardInfo(game.playerHands[id]), cardInfo.cardInfo(newCard));
-  console.log("Player " + id + " draws " + cardInfo.cardInfo(newCard).name + ".");
-
-  
-  
+  console.log("Player " + id + " draws " + cardInfo.cardInfo(newCard).name + "."); 
 }
-
-
 
 
 //eliminates a player from the round, and notifies the front end
@@ -458,7 +495,6 @@ function eliminate_player(playerid){
   return result.output;
 }
 
-
 function report_end_game(){
   var winners = [];
   for(var i = 0; i < game.playerHands.length; i++){
@@ -467,19 +503,13 @@ function report_end_game(){
     }
   }
   console.log("The game has finished. The winners are: " + winners);
+  
+  game.history.push("The round has finished! The winners are: " + winners);
   play.to('players').emit('round finished', winners);
 }
 
-
 function remaining_cards() {
   return game.display_deck;
-}
-
-
-
-// Track the last play made within the last four turns
-function play_log(id) {
-  return game.last_played;
 }
 
 
@@ -490,9 +520,10 @@ function get_hand(id) {
   return game.playerHands[id];
 }
 
-
-
-
+//gets immunity status of all players
+function get_immune_players() {
+  return game.immune;
+}
 
 // Get a users in game ID based on their unique ID
 function getUserByUId(uid){
@@ -504,8 +535,6 @@ function getUserByUId(uid){
   return -1;
 }
 
-
-
 // Get a users in game ID based on their socket ID
 function getUserBySId(sid){
   for(var i = 0; i < users.length; i++){
@@ -516,8 +545,6 @@ function getUserBySId(sid){
   return -1;
 }
 
-
-
 //Get a players in game ID based on their socket ID
 function getPlayerBySId(sid){
   for(var i = 0; i < game.players.length; i++){
@@ -527,8 +554,6 @@ function getPlayerBySId(sid){
   }
   return -1;
 }
-
-
 
 function removePlayerBySId(data){
   var gameIndex = getPlayerBySId(data);
@@ -541,10 +566,7 @@ function removePlayerBySId(data){
   if(userIndex > -1){
     users.splice(userIndex, 1);
   }
-  
 }
-
-
 
 function addNewUser(UId, socket){
   var SId = socket.id;
@@ -574,16 +596,6 @@ function addNewUser(UId, socket){
 }
 
 
-
-
-//create tuple and add to log
-function play_log_tuple (player, card, target, result) {
-  game.last_played.push([player, card, target, result]);
-}
-
-
-
-
 //Set dummy values for the game
 function setDummy(){  
   game.players = [0,1,2,3]; 
@@ -591,7 +603,7 @@ function setDummy(){
   game.currentPlayer = 0;
   game.deck = [2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8];
   game.display_deck = display_deck;
-  game.last_played = [0];
+  game.history = [];
 }
 
 
@@ -676,10 +688,10 @@ function run_tests(){
   }
 
   //Ensure the last played card is set
-  assert(game.last_played.length == 4);
+  /*assert(game.last_played.length == 4);
   for (var i = 0; i < game.players.length; i++){
     assert(game.last_played[0] == 0);
-  }
+  }*/
   console.log("startGame function successful");
 
   console.log("");
@@ -750,6 +762,9 @@ function run_tests(){
   
   console.log("Testing through game simulation...");
   console.log("Starting new game...");
+
+  //Start game
+  game.history = [];
   startGame();
   console.log("Rigging deck and hands..");
   game.deck = [7, 8, 1, 5, 3, 4, 1, 2, 3, 6, 2];
@@ -759,18 +774,15 @@ function run_tests(){
   game.playerHands[3] = 4;
   
   var r;
-  //turnPhaseOne(playedCard, otherCard) 					(RETURNS PLAYER LIST)
+  //turnPhaseOne(playedCard, otherCard) 					        (RETURNS PLAYER LIST)
   //turnPhaseTwo(targetPlayer, playedCard, guessedCard)		(RETURNS EMIT MESSAGES)
   
   console.log("Turn 1, Phase 1: Player 0 selects built environment card.");
-
-
-  console.log(game.deck);
   assert(listCmp(game.deck, [7, 8, 1, 5, 3, 4, 1, 2, 3, 6, 2]));
   r = turnPhaseOne(1, 1);
   assert(listCmp(r,[1, 2, 3]));
   
-  
+
   console.log("Turn 1, Phase 2: Player 0 targets player 1 and guesses UNSW (incorrectly).");
   r = turnPhaseTwo(1, 1, 8);
   assert(listCmp(r.message1, ['built result', 0, 1, 8, false]));
@@ -809,7 +821,7 @@ function run_tests(){
   assert(r.message1[0] == 'science draw');
   assert(r.message1[1].strength == 3);
   assert(game.playerHands[3] == 3);
-
+  
   console.log("Turn 4, Phase 1: Player 3 selects Law card.");
   assert(listCmp(game.deck, [7, 8, 1, 5, 3, 4, 1]));
   assert(game.currentPlayer == 3);
@@ -855,17 +867,18 @@ function run_tests(){
   assert(listCmp(game.deck, [7, 8, 1, 5, 3]));
   r = turnPhaseOne(4, 1);
   assert(listCmp(r, []));
-  assert(game.immune.includes(1));
+  assert(game.immune[1]);
   
   console.log("Turn 7, Phase 1: Player 0 selects Built Environment card. All other players are immune so the card is discarded without effect.");
   assert(listCmp(game.deck, [7, 8, 1, 5]));
   assert(game.playerHands[0] == 1);
-  assert(game.immune.includes(1));
   r = turnPhaseOne(1, 3);
   assert(game.playerHands[0] == 3);
 
   console.log("Turn 8, Phase 1: Player 1 selects Science card.");
-  assert(listCmp(game.immune, []));
+  assert(game.currentPlayer == 1);
+  assert(listCmp(game.immune, [false, false, false, false]));
+  console.log(game.deck);
   assert(listCmp(game.deck, [7, 8, 1]));
   r = turnPhaseOne(5, 1);
   assert(listCmp(r, [0, 1]));
@@ -881,10 +894,94 @@ function run_tests(){
   assert(listCmp(game.deck, [7]));
   r = turnPhaseOne(8, 1);
   assert(game.playerHands[0] == 0);
-  assert(listCmp(r, []));
+  assert(listCmp(r, []));  
+
+  console.log("Rigging Deck, testing special situations");
+  console.log("Player plays a Law card and targets player with Princess");
+  startGame();
+  game.deck = [7, 1, 3, 4, 1, 6, 3, 2, 2, 1, 1];
+  game.playerHands[0] = 5;
+  game.playerHands[1] = 8;
+  game.playerHands[2] = 5;
+  game.playerHands[3] = 4;
+
+  console.log("");
+  console.log("Turn 1, Phase 1: Player 0 plays Science card.");
+  assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6, 3, 2, 2, 1, 1]));
+  assert(game.currentPlayer == 0);
+  r = turnPhaseOne(5, 1);
+  assert(r.length == 4);
+  assert(listCmp(r, [0, 1, 2, 3]));
   
+  console.log("Turn 1, Phase 2: Player 0 targets Player 1. Player 1 discards UNSW and is eliminated.");
+  r = turnPhaseTwo(1, 5, 0);  
+  assert(game.playerHands[0] == 1);
+  assert(game.playerHands[1] == 0);
+  assert(game.currentPlayer == 2);
+  assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6, 3, 2, 2, 1]));
+
+  console.log("Turn 2, Phase 1: Player 2 plays Science card.");
+  r = turnPhaseOne(5, 1);
+  assert(r.length == 3);
+  assert(listCmp(r, [0, 2, 3]));
+  
+  console.log("Turn 1, Phase 2: Player 2 targets Player 3. Player 3 discards Medicine and draws Built Environment.");
+  r = turnPhaseTwo(3, 5, 0);
+  assert(r.message1.length == 2);
+  assert(r.message1[0] == 'science draw');
+  assert(r.message1[1].strength == 1);
+
+  assert(game.playerHands[2] == 1);
+  assert(game.playerHands[3] == 1);
+  assert(listCmp(game.immune, [false, false, false, false]));
+  assert(game.currentPlayer == 3);
+  assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6, 3, 2]));
+
+  console.log("Turn 3, Phase 1: Player 3 plays Law card.");
+  r = turnPhaseOne(3, 1);
+  assert(r.length == 2);
+  assert(listCmp(r, [0, 2]));
+  
+  console.log("Turn 3, Phase 2: Player 3 targets Player 0.");
+  r = turnPhaseTwo(0, 3, 0);
+
+  assert(r.message1[0] == 'law tie');
+  assert(r.message1[1]['player'][0] == 3);
+  assert(r.message1[1]['player'][1].strength == 1);
+  assert(r.message1[1]['target'][0] == 0);
+  assert(r.message1[1]['target'][1].strength == 1);
+  assert(r.message2[0] == 'law tie');
+  assert(r.message2[1]['player'][0] == 3);
+  assert(r.message2[1]['player'][1].strength == 1);
+  assert(r.message2[1]['target'][0] == 0);
+  assert(r.message2[1]['target'][1].strength == 1);
+  assert(game.playerHands[0] == 1);
+  assert(game.playerHands[3] == 1);
+  assert(game.currentPlayer == 0);
+
+  assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6, 3]));
+
+  console.log("Turn 4, Phase 1: Player 0 rigged to play Engineering and receive UNSW.");
+  game.playerHands[0] = 6;
+  game.playerHands[3] = 8;
+  r = turnPhaseOne(6, 2, 0);
+  assert(r.length == 2);
+  assert(listCmp(r, [2, 3]));
+
+  console.log("Turn 4, Phase 2: Player 0 trades with player 3.");
+  r = turnPhaseTwo(3, 6, 2);
+  assert(r.message1[0] == 'eng swap');
+  assert(r.message1[1] == 8);
+  assert(r.message2[0] == 'eng swap');
+  assert(r.message2[1] == 2);
+
+  assert(game.playerHands[0] == 8);
+  assert(game.playerHands[3] == 2);
+  assert(game.currentPlayer == 2);
+  assert(listCmp(game.deck, [7, 1, 3, 4, 1, 6]));
 
   console.log("Tests concluded.");
+  
 }
 
 //helper list comparison function

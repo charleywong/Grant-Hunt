@@ -54,18 +54,16 @@ function played_card(game, id, card, otherCard) {
   }
   //Update the cards visible for players
   game.display_deck[card]--;
-  game.last_played[id] = card;
   //Determine return value based on played card
   if (card == 1 | card == 2 | card == 3 | card == 6) {
     return {game: game, output: 1};//indicator that prompt to select ANOTHER player should be displayed
   } else if (card == 5) {
     return {game: game, output: 5};//prompt to display all players including yourself
   } else if (card == 8) {
-    game.playerHands[id] = 0;
     return {game: game, output: 8}; //player is knocked out
   } else {
     if(card == 4){
-      game.immune.push(id);
+      game.immune[id] = true;
     }
     return {game: game, output: 0}; //no additional prompts
   }
@@ -76,7 +74,7 @@ function played_card(game, id, card, otherCard) {
 // Return value of selected players hand if playing a Priest
 // Returns 8 or -8 to signify which player is knocked out by a Baron
 function selected_player(game, id, player, card) {
-  if (game.last_played[player] == 4) {
+  if (game.immune[player]) {
     return {game:game, output: 0}; //played handmaid last, can't be targeted
   }
 
@@ -153,21 +151,21 @@ function end_game(game) {
 //checks the state of the game to see if it has reached an end state or not
 function check_end_game(game) {
   if (game.deck.length == 0) {
-      var result = end_game(game);
-      game = result.game;
-      return {game:game, output: false};//deck is empty
+    var result = end_game(game);
+    game = result.game;
+    return {game:game, output: false};//deck is empty
+  }
+  var playerCount = 0;
+  for(var i = 0; i < game.playerHands.length; i++){
+    if(game.playerHands[i] != 0){
+      playerCount++;
     }
-    var playerCount = 0;
-    for(var i = 0; i < game.playerHands.length; i++){
-      if(game.playerHands[i] != 0){
-        playerCount++;
-      }
-    }
-    if(playerCount <= 1){
-      var result = end_game(game);
-      game = result.game;
-      return {game: game, output: false};
-    }
+  }
+  if(playerCount <= 1){
+    var result = end_game(game);
+    game = result.game;
+    return {game: game, output: false};
+  }
 
-    return {game: game, output: true};
+  return {game: game, output: true};
 }
