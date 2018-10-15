@@ -162,6 +162,7 @@ function startGame(){
   play.to(game.players[id]).emit('your turn', game.currentPlayer, cardInfo.cardInfo(game.playerHands[id]),  cardInfo.cardInfo(newCard));
   console.log("New game started. It is player " + id + "'s turn");
   playersInGame();
+
 }
 
 
@@ -194,7 +195,7 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [7, 6, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1,8];
+  return [7, 6, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1,8,8,8,8];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
@@ -451,7 +452,8 @@ function eliminate_player(playerid){
   var c = game.playerHands[playerid];
   game.display_deck[c]--;
   game.playerHands[playerid] = 0;
-  play.to(game.players[playerid]).emit('eliminated');
+  playersInGame();
+  play.to(game.players[playerid]).emit('eliminated', game.players);
   var result = logic.check_end_game(game);
   game = result.game;
   if(result.output == false) report_end_game();

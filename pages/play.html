@@ -143,32 +143,6 @@
                         }
                     }
                 }
-                
-                //if the current player is not in the game
-                //we need to remove their cards and tell them that they're out!
-                var stillInRound = false;
-                for(var p in playersInRound){
-                    if(playersInRound[p] == playerId){
-                        stillInRound = true;
-                        console.log("player " + playerId + " is still in the game")
-                        break;
-                    }
-                }
-                if(!stillInRound && !document.getElementById('out')){
-                    console.log("player " + playerId + " is NOT in the game")
-                    //make sure they have no cards in their hand
-                    removeCardData("card1");
-                    removeCardData("card2");
-                    document.getElementById("turnstatus").innerHTML = "";
-                    //display you're out message!
-                    var row = document.getElementById("cards");
-                    var message = document.createElement("h1");
-                    message.innerHTML = "YOU'RE OUT OF THE ROUND!";
-                    message.style.marginLeft = "auto";
-                    message.style.marginRight = "auto";
-                    message.setAttribute("id", "out");
-                    row.appendChild(message);
-                }
 
             });
             
@@ -221,6 +195,54 @@
                 submitModalButtonSwitch(null);
                 document.getElementById('modal-title').innerHTML = "Player " + playedPlayer + " has played Medicine and targeted you!";
                 document.getElementById('information').innerHTML = "As a result, your existing card has been discarded and your new card is: " + newCard.name;
+
+            });
+
+            socket.on('round finished', function(winners) {
+                console.log("round FINISHED");
+                // remove cards
+                // show who has won the game
+
+                // check if 
+                removeCardData("card1");
+                removeCardData("card2");
+
+                document.getElementById("turnstatus").innerHTML = "";
+                //display you're out message!
+                var row = document.getElementById("cards");
+                var message = document.createElement("h1");
+
+                if (winners.length == 1) {
+                    // only 1 winner
+                    if (winners[0] == playerId) {
+                        message.innerHTML = "You are the winner of this round"
+                    } else {
+                        message.innerHTML = "Player " + winners[0] + " is the winner of this round"    
+                    }
+                    
+                } else {
+                    message.innerHTML = "Players ";
+                    for (var i = 0; i < winners.length; i ++) {
+                        if (i == winners.length-1) {
+                            message.innerHTML = message.innerHTML + ' and ' + winners[i];
+                        } else {
+                            message.innerHTML = message.innerHTML + ' ' + winners[i] + ', ';
+                        }
+                    }
+                    // m
+                    message.innerHTML += " are the winners of this round!";
+                }
+
+                
+                message.style.marginLeft = "auto";
+                message.style.marginRight = "auto";
+                message.setAttribute("id", "out");
+                row.appendChild(message);
+
+                // we also need to increment the winner's rounds won
+                // var winnerInTable = document.querySelector("tbody[id='players'] > tr[name='player-status'][style='opacity:1;'] > td");
+                // winnerInTable.innerHTML = 1;
+
 
             });
 
@@ -445,10 +467,34 @@
                     default:
                         return "Unknown";
                 }
-            });
+            };
             
-            socket.on('eliminated', function(){
+            socket.on('eliminated', function(players){
             	console.log("I got eliminated!");
+
+                var stillInRound = false;
+                for(var p in players){
+                    if(players[p] == playerId){
+                        stillInRound = true;
+                        console.log("player " + playerId + " is still in the game")
+                        break;
+                    }
+                }
+                if(!stillInRound && !document.getElementById('out')){
+                    console.log("player " + playerId + " is NOT in the game")
+                    //make sure they have no cards in their hand
+                    removeCardData("card1");
+                    removeCardData("card2");
+                    document.getElementById("turnstatus").innerHTML = "";
+                    //display you're out message!
+                    var row = document.getElementById("cards");
+                    var message = document.createElement("h1");
+                    message.innerHTML = "YOU'RE OUT OF THE ROUND!";
+                    message.style.marginLeft = "auto";
+                    message.style.marginRight = "auto";
+                    message.setAttribute("id", "out");
+                    row.appendChild(message);
+                }
             });
 
 
@@ -468,10 +514,6 @@
 
                 }
             }
-            
-            socket.on('eliminated', function(){
-            	console.log("I got eliminated!");
-            });
 
             function builtEnvironment(playerList, immunePlayers){
                 $('#gameModal').modal('show');
