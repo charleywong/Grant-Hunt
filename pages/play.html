@@ -175,6 +175,9 @@
                     case 5:
                         science(playerList, immunePlayers);
                         break;
+                    case 6:
+                        engineering(playerList, immunePlayers);
+                        break;
                     default:
                         console.log("Emitting BLANK target player message");
                         socket.emit('target player', player, cardLastClicked.strength, null);
@@ -362,6 +365,28 @@
                 }
                 document.getElementById('information').innerHTML = "Player " +  opponentName + " has the card " + opponentCard + " and so do you!<br>" +
                                                                         "<strong>It's a tie, you both stay in the round!</strong>";
+            });
+
+
+            socket.on('eng swap',function(newCard, player, target) {
+                //player can either be target player or player who has played the card
+                //there is a separate emit for target player and player who has played the card
+                //display "you and ___ have switched hands. your new hand is"
+                $('#gameModal').modal('show');
+                // console.log("my playerid: " + playerId);
+                // console.log("target: " + target)
+                if (playerId == player) {
+                    // you are the person who has played engineering
+                    document.getElementById('modal-title').innerHTML = "You have switched hands with player " + target;
+                } else {
+                    document.getElementById('modal-title').innerHTML = "Player " + player + " played Engineering against you";
+                }
+                document.getElementById('information').innerHTML = "Your new card is: " + newCard.name
+
+                //remove card1
+                removeCardData("card1")
+                //append new card
+                appendNewCard(newCard,"card1")
             });
             
             function removeCardData(cardToRemove) {
@@ -568,6 +593,14 @@
                 appendPlayersList(playerList, immunePlayers);
             }
 
+            function engineering(playerList, immunePlayers) {
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've played Engineering";
+                document.getElementById('information').innerHTML = "Select an opponent and trade hands with them.";
+                appendPlayersList(playerList, immunePlayers);
+
+            }
+
             function appendPlayersList(playerList, immunePlayers){
                 //Append players
                 var playersLabel = document.createElement("label");
@@ -637,6 +670,12 @@
                         cardLastClicked = undefined;
                         break;
                     case 5:
+                        var p = document.getElementById("playerSelect");
+                        var player = p.options[p.selectedIndex].value;
+                        socket.emit('target player', player, cardLastClicked.strength, null);
+                        cardLastClicked = undefined;
+                        break;
+                    case 6:
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
                         socket.emit('target player', player, cardLastClicked.strength, null);
