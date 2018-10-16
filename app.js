@@ -264,7 +264,6 @@ function playersInGame(){
     pId = p;
     play.to(game.players[p]).emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, pId);
   }
-  console.log(game.history);
   play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
 }
 
