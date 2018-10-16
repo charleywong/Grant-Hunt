@@ -65,12 +65,21 @@ h1, h2, h3, h4, h5, h6 {
 	width:100%;
 }
 
-.history-content > #history-content{
+.history {
+	height:45%;
+}
+
+.history-content {
 	width: 100%;
     text-align: left;
 	padding-left: 3%;
+	height: 80%;
+    overflow-y: scroll;
 }
 
+#player {
+	padding-top:30px;
+}
 
 .player-table{
 	margin-left: auto;

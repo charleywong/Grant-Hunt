@@ -146,6 +146,18 @@
 
             });
             
+            socket.on('game update', function(currentPlayer, display_deck, history, immune){
+                var historyContent = document.getElementById('history-content');
+                removeCardData('history-content');
+                console.log(history)
+                for(var i=history.length; i>0; i--){
+                    var message = document.createElement("p");
+                    message.innerHTML = history[i-1];
+                    historyContent.appendChild(message);
+                }
+
+            });
+            
             socket.on('your turn', function(currentPlayer, card1, card){
                 document.getElementById("turnstatus").innerHTML = "It's your turn, Player " + currentPlayer + "!";
                 playerId = currentPlayer;
@@ -292,10 +304,11 @@
                 //Change modal button to close
                 submitModalButtonSwitch(null);
                 //Display message
+                console.log(guessedCard);
                 var message = "";
                 if(targetPlayer == playerId){
                     document.getElementById('modal-title').innerHTML = "Player " + playedPlayer + " played Built Environment against you";
-                    message = "Player " + playedPlayer + " guessed that you have " + valueToName(guessedCard);
+                    message = "Player " + playedPlayer + " guessed that you have " + guessedCard.name;
                     if(val){
                         message += " and was correct. <br> <strong>YOU'VE BEEN KNOCKED OUT OF THE ROUND</strong>";
                     } else {
@@ -303,7 +316,7 @@
                     }
                 } else {
                     document.getElementById('modal-title').innerHTML = "You've played Built Environment";
-                    message = "You guessed that Player " + targetPlayer + " has " + valueToName(guessedCard);
+                    message = "You guessed that Player " + targetPlayer + " has " + guessedCard.name;
                     if(val){
                         message += " and was correct. <br> <strong>PLAYER " + targetPlayer + " HAS BEEN KNOCKED OUT OF THE ROUND</strong>";
                     } else {
@@ -480,27 +493,6 @@
                         return 8;
                 }
             }
-            //returns card name
-            function valueToName(value){
-                switch (value) {
-                    case "1":
-                        return "Built Environment";
-                    case "2":
-                        return "Arts";
-                    case "3":
-                        return "Law";
-                    case "4":
-                        return "Medicine";
-                    case "5":
-                        return "Science";
-                    case "6":
-                        return "Engineering";
-                    case "7":
-                        return "Business";
-                    default:
-                        return "Unknown";
-                }
-            };
 
             //if the current player is not in the game
             //we need to remove their cards and tell them that they're out!
@@ -791,8 +783,8 @@
                     <div class="history" id="history">
                         <h6>HISTORY</h6>
                         <hr>
-                        <div class="history-content">
-                            <p id="history-content">Loreum ipsum</p>
+                        <div id="history-content" class="history-content">
+                            <p>Loreum ipsum</p>
                             <hr>
                         </div>
                     </div>
