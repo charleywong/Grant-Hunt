@@ -305,7 +305,7 @@ function turnPhaseOne(playedCard, otherCard){
     }
   } else if(result == 7){
     //Send a message to say that play is invalid
-    play.to(game.players[id]).emit('invalid play');
+    play.to(game.players[id]).emit('invalid play', 'business');
     return playerList;
   } else if(result == 8){
     play_log_tuple (id, 8, -1, -1, -1);
@@ -383,7 +383,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     game = output.game;
     if(result == 0){
       //if targeting a player with medicine immunity
-      play.to(game.players[id]).emit('invalid play');
+      play.to(game.players[id]).emit('invalid play', 'immunity');
       emitMessage1 = ['invalid play'];
       return {message1: emitMessage1, message2: emitMessage2};
     } else if(playedCard == 2){

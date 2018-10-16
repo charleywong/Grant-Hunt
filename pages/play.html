@@ -181,8 +181,25 @@
                     default:
                         console.log("Emitting BLANK target player message");
                         socket.emit('target player', player, cardLastClicked.strength, null);
+                        endTurn();
                         break;
                 }
+            });
+
+            socket.on('invalid play', function(issue) {
+                $('#gameModal').modal('show');
+                submitModalButtonSwitch(null);
+                document.getElementById('modal-title').innerHTML = "INVALID PLAY!";
+                // if player has business + science or engineering, they MUST discard the latter.
+                if(issue == "business"){
+                    document.getElementById('information').innerHTML = "If you hold the Business card and either the Science or Engineering card, the Business card <strong>must<strong> be played immediately.";
+                } else {
+                    document.getElementById('information').innerHTML = "You cannot target a player who is immune (a player who has played Medicine).";
+                }
+                
+                
+                
+
             });
 
             socket.on('science draw', function(playedPlayer, newCard) {
@@ -209,7 +226,7 @@
                 // check if 
                 removeCardData("card1");
                 removeCardData("card2");
-
+                document.getElementById("playbutton").style.visibility = "hidden";
                 document.getElementById("turnstatus").innerHTML = "";
                 //display you're out message!
                 var row = document.getElementById("cards");
@@ -329,14 +346,19 @@
                 //Display message
                 if(hands['player'][0] == playerId){
                     var winnerName = hands['target'][0];
-                    var winnerCard = hands['target'][1].name; 
+                    var winnerCard = hands['target'][1].name;
+                    var loserName = hands['player'][0];
+                    var loserCard = hands['player'][1].name;  
                     document.getElementById('modal-title').innerHTML = "You've played Law";
                 } else {
                     var winnerName = hands['player'][0];
-                    var winnerCard = hands['player'][1].name; 
+                    var winnerCard = hands['player'][1].name;
+                    var loserName = hands['target'][0];
+                    var loserCard = hands['target'][1].name; 
                     document.getElementById('modal-title').innerHTML = "Player " + hands['player'][0] + " played Law against you";
                 }
                 document.getElementById('information').innerHTML = "Player " +  winnerName + " has the card " + winnerCard + "<br>" +
+                                                                    "Player " +  loserName + " has the card " + loserCard + "<br>" +
                                                                         "<strong>YOU'VE BEEN KNOCKED OUT OF THE ROUND!</strong>";
             });
 
@@ -346,15 +368,20 @@
                 submitModalButtonSwitch(null);
                 //Display message
                 if(hands['player'][0] == playerId){
-                    var loserName = hands['player'][0];
-                    var loserCard = hands['player'][1].name; 
-                    document.getElementById('modal-title').innerHTML = "You've played Law";
-                } else {
+                    var winnerName = hands['player'][0];
+                    var winnerCard = hands['player'][1].name;
                     var loserName = hands['target'][0];
                     var loserCard = hands['target'][1].name; 
+                    document.getElementById('modal-title').innerHTML = "You've played Law";
+                } else {
+                    var winnerName = hands['target'][0];
+                    var winnerCard = hands['target'][1].name;
+                    var loserName = hands['player'][0];
+                    var loserCard = hands['player'][1].name;   
                     document.getElementById('modal-title').innerHTML = "Player " + hands['player'][0] + " played Law against you";
                 }
-                document.getElementById('information').innerHTML = "Player " +  loserName + " has the card " + loserCard + "<br>" +
+                document.getElementById('information').innerHTML = "Player " +  winnerName + " has the card " + winnerCard + "<br>" +
+                                                                    "Player " +  loserName + " has the card " + loserCard + "<br>" +
                                                                         "<strong>YOU'VE KNOCKED YOUR OPPONENT OUT OF THE ROUND!</strong>";
             });
 
@@ -417,25 +444,31 @@
                 document.body.removeChild(textArea);
             }
 
-            function endTurn() {
+            function playCard(){
                 if (!cardLastClicked && !otherPlayerCard) {
                     // player has not selected anything
                     // let player know that they cannot proceed until they select a card
                     alert("You cannot proceed until you have chosen a card to play");
                     return;
                 }
-                document.getElementById("playbutton").style.visibility = "hidden";
-                document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
-
-                // cardLastClicked stores:
-                // {
-                //     "name":"..",
-                //     "cardNum":"..",
-                //     "strength":".."
-                // }
 
                 var playedCard = nameToValue(cardLastClicked); 
                 var otherCard = nameToValue(otherPlayerCard);
+                socket.emit('play card', playedCard, otherCard);
+                console.log("playedCard = " + playedCard);
+                console.log("otherCard = " + otherCard);
+                cardLastClicked.strength = playedCard;
+                otherPlayerCard.strength = otherCard;
+                console.log("strength of last clicked = " + cardLastClicked.strength);
+                console.log("emitted played card:"+playedCard+","+otherCard);
+                if(playedCard == 8){
+                    endTurn();
+                }         
+            }
+
+            function endTurn() {
+                document.getElementById("playbutton").style.visibility = "hidden";
+                document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
 
                 // we need to delete the card that has been chosen
                 // we use cardLastClicked.cardNum to determine which children to remove
@@ -449,14 +482,8 @@
                     card1.appendChild(card2Clone);
                 }
                 removeCardData("card2")
-            
-                socket.emit('play card', playedCard, otherCard);
-                console.log("playedCard = " + playedCard);
-                console.log("otherCard = " + otherCard);
-                cardLastClicked.strength = playedCard;
-                otherPlayerCard.strength = otherCard;
-                console.log("strength of last clicked = " + cardLastClicked.strength);
-                console.log("emitted played card:"+playedCard+","+otherCard);           
+                cardLastClicked = undefined;
+                  
             }
 
             //returns card value
@@ -532,8 +559,8 @@
                     message.setAttribute("id", "out");
                     row.appendChild(message);
                 }
+                document.getElementById("playbutton").style.visibility = "hidden";
             });
-
 
             function submitModalButtonSwitch(playedCard){
                 var btn =  document.getElementById('modal-submit');
@@ -664,14 +691,11 @@
                         var player = p.options[p.selectedIndex].value;
                         socket.emit('target player', player, cardLastClicked.strength, role);
                         // console.log(player, cardLastClicked.strength, role)
-                        cardLastClicked = undefined;
                         break;
                     case 2:
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
-
                         socket.emit('target player', player, cardLastClicked.strength);
-                        cardLastClicked = undefined;
                         break;
                     case 3:
                          //Law: get the values from player select and send to backend
@@ -679,19 +703,16 @@
                         var player = p.options[p.selectedIndex].value;
                         console.log("Emitting target player message");
                         socket.emit('target player', player, cardLastClicked.strength, null);
-                        cardLastClicked = undefined;
                         break;
                     case 5:
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
                         socket.emit('target player', player, cardLastClicked.strength, null);
-                        cardLastClicked = undefined;
                         break;
                     case 6:
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
                         socket.emit('target player', player, cardLastClicked.strength, null);
-                        cardLastClicked = undefined;
                         break;
                     default:
                         socket.emit('target player', player, cardLastClicked.strength, null);
@@ -703,6 +724,8 @@
                 while (modal_body.lastChild.id !== 'information') {
                     modal_body.removeChild(modal_body.lastChild);
                 }
+
+                endTurn();
 
             }
 
@@ -820,7 +843,7 @@
                     </div>
                     <div class="row">
                         <div class="col-lg-12" id="turnend">
-                            <a class="button" id="playbutton" onclick="endTurn()" style="visibility: hidden;">Play Card</a>
+                            <a class="button" id="playbutton" onclick="playCard()" style="visibility: hidden;">Play Card</a>
                         </div>
                         
                     </div>
