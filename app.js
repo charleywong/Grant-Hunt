@@ -195,8 +195,8 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [7, 8, 5, 5, 4, 4, 2, 2, 1,3,3, 1, 1, 1, 1,6];
-  //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
+  //return [7, 8, 2, 5, 4, 4, 5, 2, 1,3,3, 1, 1, 1, 1,6];
+  return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
 
@@ -345,7 +345,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
       emitMessage1 = ['invalid play'];
     } else if(playedCard == 2){
       //if looking at a players hand with arts
-      play.to(game.players[id]).emit('arts result', cardInfo.cardInfo(result));
+      play.to(game.players[id]).emit('arts result', targetPlayer, cardInfo.cardInfo(result));
       emitMessage1 = ['arts result', cardInfo.cardInfo(result)]
     } else if(playedCard == 3) {
       var hands = {};
@@ -396,10 +396,11 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     } else if (playedCard == 6){
       //if players swap hand with Engineering
       //we tell both players what their new hands are
-      play.to(game.players[id]).emit('eng swap', game.playerHands[id]);
+      play.to(game.players[id]).emit('eng swap', cardInfo.cardInfo(game.playerHands[id]), id, targetPlayer);
       emitMessage1 = ['eng swap', game.playerHands[id]];
-      play.to(game.players[targetPlayer]).emit('eng swap', game.playerHands[targetPlayer]);
+      play.to(game.players[targetPlayer]).emit('eng swap', cardInfo.cardInfo(game.playerHands[targetPlayer]), id, targetPlayer);
       emitMessage2 = ['eng swap', game.playerHands[targetPlayer]];
+
     }
   }
   // Proceed to next turn
@@ -437,7 +438,7 @@ function nextTurn(){
   //player draws a card
   var newCard = game.deck.pop();
   play.to(game.players[id]).emit('your turn', id, cardInfo.cardInfo(game.playerHands[id]), cardInfo.cardInfo(newCard));
-  console.log("Player " + id + " draws " + cardInfo.cardInfo(newCard).name + ".");
+  console.log("Player " + id + " draws " + cardInfo.cardInfo(newCard).name + ". Players cards are:" + cardInfo.cardInfo(game.playerHands[id]).name + " and "+ cardInfo.cardInfo(newCard).name);
 
   
   

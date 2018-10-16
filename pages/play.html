@@ -247,6 +247,15 @@
 
             });
 
+            socket.on('all immune', function() {
+                $('#gameModal').modal('show');
+                //Change modal button to close
+                submitModalButtonSwitch(null);
+                //Display message
+                document.getElementById('modal-title').innerHTML = "All other players are immune";
+                document.getElementById('information').innerHTML = "All other players are immune, your card's effects do not take effect!";
+            });
+
             function appendNewCard(card, cardToAddTo) {
                 var card2 = document.getElementById(cardToAddTo);
 
@@ -373,6 +382,7 @@
                 //there is a separate emit for target player and player who has played the card
                 //display "you and ___ have switched hands. your new hand is"
                 $('#gameModal').modal('show');
+                submitModalButtonSwitch(null);
                 // console.log("my playerid: " + playerId);
                 // console.log("target: " + target)
                 if (playerId == player) {
