@@ -326,8 +326,8 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     } else if (playedCard == 6){
       //if players swap hand with Engineering
       //we tell both players what their new hands are
-      play.to(game.players[id]).emit('eng swap', game.playerHands[id]);
-      play.to(game.players[targetPlayer]).emit('eng swap', game.playerHands[targetPlayer]);
+      play.to(game.players[id]).emit('eng swap', cardInfo(game.playerHands[id]),id, targetPlayer);
+      play.to(game.players[targetPlayer]).emit('eng swap', cardInfo(game.playerHands[targetPlayer]), id,targetPlayer);
     }
   }
   // Proceed to next turn
@@ -354,7 +354,7 @@ function nextTurn(){
   //upate immunity - if we push onto the right and can only do so on a player's turn, then they should always be on the left on their turn
   if(game.immune.length > 0){
     if(game.immune[0] == id){
-      game.splice(0, 1);
+      game.immune.splice(0, 1);
     }
   }
   
