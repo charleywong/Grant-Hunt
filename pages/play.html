@@ -253,7 +253,7 @@
                 submitModalButtonSwitch(null);
                 //Display message
                 document.getElementById('modal-title').innerHTML = "All other players are immune";
-                document.getElementById('information').innerHTML = "All other players are immune, your card's effects do not take effect!";
+                document.getElementById('information').innerHTML = "All other players are immune, your card's effects do not take affect!";
             });
 
             function appendNewCard(card, cardToAddTo) {
@@ -501,6 +501,10 @@
                         return "Unknown";
                 }
             };
+
+            //if the current player is not in the game
+            //we need to remove their cards and tell them that they're out!
+            // double check that curr player is actually not in the round anymore (safety)
             
             socket.on('eliminated', function(players){
             	console.log("I got eliminated!");
@@ -622,12 +626,10 @@
                 players.setAttribute("id", "playerSelect");
                 players.setAttribute("name", "playerSelect");
                 players.setAttribute("class", "form-control");
-
                 for (var p in playersInRound){
                     //create an <option> to add the <select>
                     var child = document.createElement("option");
                     //assign values to the <option>
-
                     if(playerId == playersInRound[p]){
                         child.textContent = playersInRound[p] + " (You)";
                     } else {
@@ -636,7 +638,7 @@
                     
                     // check if the player is immune
 
-                    if (immunePlayers.includes(playersInRound[p])) {
+                    if (immunePlayers[playersInRound[p]]) {
                         child.textContent = child.textContent + " (Medicine)";
                         child.value = child.value + " (Medicine)";
                         // also need to disable this option
