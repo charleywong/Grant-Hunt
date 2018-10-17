@@ -74,11 +74,14 @@
                 //edit what's in the card title
                 cardTitle.style.color = "black";
                 cardTitle.innerHTML = data.name;
+                cardTitle.style.paddingBottom = "5%";
 
-                //add temporary placeholder image for the card
-                cardImage.setAttribute("src","/images/frame-landscape.png")
-                cardImage.style.width = "60%";
-                cardImage.style.height = "10em";
+                var image = "/images/"+data.strength+".png";
+                cardImage.setAttribute("src", image);
+                cardImage.style.width = "50%";
+                cardText.style.color = "black";
+                cardText.style.paddingTop = "5%";
+
                 //edit what's in the text section of the card
                 cardText.style.color = "black";
                 cardText.innerHTML = "Strength: " + data.strength + "<br>Effect: " + data.description;
@@ -284,16 +287,17 @@
                 
 
                 var cardTitle = document.createElement("h5");
+                cardTitle.style.paddingBottom = "5%";
                 var cardImage = document.createElement("img");
                 var cardText = document.createElement("p");
 
                 cardTitle.style.color = "black";
                 cardTitle.innerHTML = card.name;
-
-                cardImage.setAttribute("src","/images/frame-landscape.png")
-                cardImage.style.width = "60%";
-                cardImage.style.height = "10em";
+                var image = "/images/"+card.strength+".png";
+                cardImage.setAttribute("src", image);
+                cardImage.style.width = "50%";
                 cardText.style.color = "black";
+                cardText.style.paddingTop = "5%";
                 // cardText.appendChild(text);
                 cardText.innerHTML = "Strength: " + card.strength + "<br>Effect: " + card.description;
                 card_body.appendChild(cardTitle);
