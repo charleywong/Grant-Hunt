@@ -123,6 +123,8 @@ play.on('connection', function(socket){
   
   socket.on('play card', function(playedCard, otherCard){
     console.log("play card message received");
+    console.log("played card: " + playedCard)
+    console.log("other card in hand: " + otherCard)
     turnPhaseOne(playedCard, otherCard);
   });
   
@@ -188,7 +190,7 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3, 1, 1, 1, 1, 8];
+  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3,1, 5, 1, 1, 1,7];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
@@ -308,7 +310,7 @@ function turnPhaseOne(playedCard, otherCard){
     }
   } else if(result == 7){
     //Send a message to say that play is invalid
-    play.to(game.players[id]).emit('invalid play');
+    play.to(game.players[id]).emit('invalid play', 'business');
     return playerList;
   } else if(result == 8){
     play_log_tuple (id, 8, -1, -1, -1);
@@ -387,7 +389,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     game = output.game;
     if(result == 0){
       //if targeting a player with medicine immunity
-      play.to(game.players[id]).emit('invalid play');
+      play.to(game.players[id]).emit('invalid play', 'immunity');
       emitMessage1 = ['invalid play'];
       return {message1: emitMessage1, message2: emitMessage2};
     } else if(playedCard == 2){
