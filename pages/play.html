@@ -152,9 +152,11 @@
                 console.log(history)
                 for(var i=history.length; i>0; i--){
                     var message = document.createElement("p");
-                    message.innerHTML = history[i-1];
+                    message.innerHTML = history[history.length-i];
                     historyContent.appendChild(message);
                 }
+                //automatically scroll when new paragraph is added
+                historyContent.scrollTop = historyContent.scrollHeight;
 
             });
             
