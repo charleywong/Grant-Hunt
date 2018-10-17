@@ -197,6 +197,7 @@ function newDeck(){
 //create tuple and add to log
 function play_log_tuple (player, card, guessedCard, target, result) {
   var string = "Player " + player + " ";
+  var guessedCard = parseInt(guessedCard);
   switch(card){
     case 1:
       string = string + "played Built Environment. They guessed Player " + target + " had " + cardInfo.cardInfo(guessedCard).name + ", ";
@@ -213,8 +214,10 @@ function play_log_tuple (player, card, guessedCard, target, result) {
       string = string + "targeted Player " + target + " with a Law card, "
       if(result == 8){
         string = string + "and lost! Player " + player + " is eliminated from the round.";
-      } else {
+      } else if(result == -8) {
         string = string + "and won! Player " + target + " is eliminated from the round."; 
+      } else {
+        string = string + "and nothing happened!"; 
       }
       break;
     case 4: 
@@ -235,7 +238,7 @@ function play_log_tuple (player, card, guessedCard, target, result) {
       string = string + "discarded their Business card.";
       break;
     case 8:
-      string = string + "discarded UNSW, and are eliminated from the round!";
+      string = string + "discarded UNSW, and is eliminated from the round!";
       break;
     default:
       string = "Error handling play history: Unknown card played.";  
@@ -355,19 +358,20 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     if(guessedCard != null){
       var result = logic.guessed_card(game, id, targetPlayer, guessedCard);
       game = result.game;
+      var guessedCard = parseInt(guessedCard);
       if(result.output == -8){
-        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, true);
+        play.to(game.players[id]).emit('built result', id, targetPlayer, gcardInfo.cardInfo(guessedCard), true);
         emitMessage1 = ['built result', id, targetPlayer, guessedCard, true];
-        play.to(game.players[targetPlayer]).emit('built result', id, targetPlayer, guessedCard, true);
+        play.to(game.players[targetPlayer]).emit('built result', id, targetPlayer, cardInfo.cardInfo(guessedCard), true);
         emitMessage2 = ['built result', id, targetPlayer, guessedCard, true];
         
         if(eliminate_player(targetPlayer) == false) {
           return {message1: emitMessage1, message2: emitMessage2};
         } 
       } else {
-        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, false);
+        play.to(game.players[id]).emit('built result', id, targetPlayer, cardInfo.cardInfo(guessedCard), false);
         emitMessage1 = ['built result', id, targetPlayer, guessedCard, false];
-        play.to(game.players[targetPlayer]).emit('built result', id ,targetPlayer, guessedCard, false);
+        play.to(game.players[targetPlayer]).emit('built result', id ,targetPlayer, cardInfo.cardInfo(guessedCard), false);
         emitMessage2 = ['built result', id ,targetPlayer, guessedCard, false];
       }
       play_log_tuple (id, playedCard, guessedCard, targetPlayer, result.output);
