@@ -465,7 +465,7 @@
                 otherPlayerCard.strength = otherCard;
                 console.log("strength of last clicked = " + cardLastClicked.strength);
                 console.log("emitted played card:"+playedCard+","+otherCard);
-                if(playedCard == 8){
+                if(playedCard == 8 || playedCard == 7 || playedCard == 4){
                     endTurn();
                 }         
             }
