@@ -16,6 +16,7 @@
             var playersInRound;
             var playerId;
             var allRoles = {'Built Environment': 1, 'Arts':2, 'Law':3, 'Medicine':4, 'Science':5, 'Engineering':6, 'Business':7, 'UNSW':8}
+            var winnersSoFar;
 
             socket.on('registration request', function(){
                 var uid = sessionStorage.getItem('gameUniqueId');
@@ -155,6 +156,7 @@
                 console.log(history)
                 for(var i=history.length; i>0; i--){
                     var message = document.createElement("p");
+                    message.style.width = '100%';
                     message.innerHTML = history[history.length-i];
                     historyContent.appendChild(message);
                 }
@@ -237,10 +239,10 @@
 
             socket.on('round finished', function(winners) {
                 console.log("round FINISHED");
+                winnersSoFar = winners;
                 // remove cards
                 // show who has won the game
-
-                // check if 
+                //
                 removeCardData("card1");
                 removeCardData("card2");
                 document.getElementById("playbutton").style.visibility = "hidden";
@@ -278,6 +280,18 @@
                 // we also need to increment the winner's rounds won
                 var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(4) > td:nth-child(2)");
                 winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
+
+                //add a button 'next round' that all players must click in order to move onto the next round
+                //first, remove play card button
+                var playCard = document.getElementById("playbutton");
+                playCard.parentNode.removeChild(playCard);
+                var nextRoundButton = document.createElement("a")
+                nextRoundButton.innerHTML = "Next Round"
+                nextRoundButton.setAttribute("class", "button")
+                nextRoundButton.setAttribute("id","nextRound")
+                nextRoundButton.setAttribute("onclick","readyUp()")
+                document.getElementById("turnend").appendChild(nextRoundButton)
+                //let all players know who has pressed that button
 
             });
 
@@ -784,6 +798,11 @@
 
             }
 
+            function readyUp () {
+                console.log("I am ready")
+                socket.emit("ready");
+            }
+
             window.onbeforeunload = function() {
                 return "";
             };
@@ -807,9 +826,9 @@
                 <p id="waitingstatus" class="loading status"></p>
                 <a class="button" id="share-link" onclick="copyToClipboard()" style="visibility: hidden;">Click to copy shareable link!</a>
             </div>
-            <div id="gamewindow" action="" style="visibility: hidden" >
-                <div class="game-sidebar" id="game-sidebar">
-                    <div class="history" id="history">
+            <div id="gamewindow" action="" style="visibility: hidden; --gwidth: 100%" >
+                <div class="game-sidebar" id="game-sidebar"style="width: calc(var(--gwidth)*0.2)">
+                    <div class="history" id="history" >
                         <h6>HISTORY</h6>
                         <hr>
                         <div id="history-content" class="history-content">
@@ -845,7 +864,7 @@
                         </div>
                         
                     </div>
-                    
+                </div>    
             </div>
 
             
