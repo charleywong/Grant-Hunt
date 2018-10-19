@@ -212,6 +212,7 @@ function startRound(){
   play.to(game.players[firstPlayer]).emit('your turn', firstPlayer, cardInfo.cardInfo(game.playerHands[firstPlayer]),  cardInfo.cardInfo(newCard));
   console.log("New game started. It is player " + firstPlayer + "'s turn");
   playersInGame();
+
 }
 
 
@@ -437,7 +438,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
       return {message1: emitMessage1, message2: emitMessage2};
     } else if(playedCard == 2){
       //if looking at a players hand with arts
-      play.to(game.players[id]).emit('arts result', targetPlayer,cardInfo.cardInfo(result));
+      play.to(game.players[id]).emit('arts result', targetPlayer, cardInfo.cardInfo(result));
       emitMessage1 = ['arts result', cardInfo.cardInfo(result)]
     } else if(playedCard == 3) {
       var hands = {};
@@ -491,10 +492,11 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     } else if (playedCard == 6){
       //if players swap hand with Engineering
       //we tell both players what their new hands are
-      play.to(game.players[id]).emit('eng swap', game.playerHands[id]);
+      play.to(game.players[id]).emit('eng swap', cardInfo.cardInfo(game.playerHands[id]), id, targetPlayer);
       emitMessage1 = ['eng swap', game.playerHands[id]];
-      play.to(game.players[targetPlayer]).emit('eng swap', game.playerHands[targetPlayer]);
+      play.to(game.players[targetPlayer]).emit('eng swap', cardInfo.cardInfo(game.playerHands[targetPlayer]), id, targetPlayer);
       emitMessage2 = ['eng swap', game.playerHands[targetPlayer]];
+
     }
     play_log_tuple (id, playedCard, guessedCard, targetPlayer, result);
   }
@@ -539,7 +541,8 @@ function eliminate_player(playerid){
   var c = game.playerHands[playerid];
   game.display_deck[c]--;
   game.playerHands[playerid] = 0;
-  play.to(game.players[playerid]).emit('eliminated',game.players);
+  playersInGame();
+  play.to(game.players[playerid]).emit('eliminated', game.players);
   var result = logic.check_end_game(game);
   game = result.game;
   if(result.output == false) report_end_round();

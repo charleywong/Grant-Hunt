@@ -175,6 +175,9 @@
                     case 5:
                         science(playerList, immunePlayers);
                         break;
+                    case 6:
+                        engineering(playerList, immunePlayers);
+                        break;
                     default:
                         console.log("Emitting BLANK target player message");
                         socket.emit('target player', player, cardLastClicked.strength, null);
@@ -196,6 +199,61 @@
                 document.getElementById('modal-title').innerHTML = "Player " + playedPlayer + " has played Medicine and targeted you!";
                 document.getElementById('information').innerHTML = "As a result, your existing card has been discarded and your new card is: " + newCard.name;
 
+            });
+
+            socket.on('round finished', function(winners) {
+                console.log("round FINISHED");
+                // remove cards
+                // show who has won the game
+
+                // check if 
+                removeCardData("card1");
+                removeCardData("card2");
+
+                document.getElementById("turnstatus").innerHTML = "";
+                //display you're out message!
+                var row = document.getElementById("cards");
+                var message = document.createElement("h1");
+
+                if (winners.length == 1) {
+                    // only 1 winner
+                    if (winners[0] == playerId) {
+                        message.innerHTML = "You are the winner of this round"
+                    } else {
+                        message.innerHTML = "Player " + winners[0] + " is the winner of this round"    
+                    }
+                    
+                } else {
+                    message.innerHTML = "Players ";
+                    for (var i = 0; i < winners.length; i ++) {
+                        if (i == winners.length-1) {
+                            message.innerHTML = message.innerHTML + ' and ' + winners[i];
+                        } else {
+                            message.innerHTML = message.innerHTML + ' ' + winners[i] + ', ';
+                        }
+                    }
+                    message.innerHTML += " are the winners of this round!";
+                }
+
+                
+                message.style.marginLeft = "auto";
+                message.style.marginRight = "auto";
+                message.setAttribute("id", "out");
+                row.appendChild(message);
+
+                // we also need to increment the winner's rounds won
+                var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(4) > td:nth-child(2)");
+                winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
+
+            });
+
+            socket.on('all immune', function() {
+                $('#gameModal').modal('show');
+                //Change modal button to close
+                submitModalButtonSwitch(null);
+                //Display message
+                document.getElementById('modal-title').innerHTML = "All other players are immune";
+                document.getElementById('information').innerHTML = "All other players are immune, your card's effects do not take affect!";
             });
 
             function appendNewCard(card, cardToAddTo) {
@@ -317,6 +375,29 @@
                 document.getElementById('information').innerHTML = "Player " +  opponentName + " has the card " + opponentCard + " and so do you!<br>" +
                                                                         "<strong>It's a tie, you both stay in the round!</strong>";
             });
+
+
+            socket.on('eng swap',function(newCard, player, target) {
+                //player can either be target player or player who has played the card
+                //there is a separate emit for target player and player who has played the card
+                //display "you and ___ have switched hands. your new hand is"
+                $('#gameModal').modal('show');
+                submitModalButtonSwitch(null);
+                // console.log("my playerid: " + playerId);
+                // console.log("target: " + target)
+                if (playerId == player) {
+                    // you are the person who has played engineering
+                    document.getElementById('modal-title').innerHTML = "You have switched hands with player " + target;
+                } else {
+                    document.getElementById('modal-title').innerHTML = "Player " + player + " played Engineering against you";
+                }
+                document.getElementById('information').innerHTML = "Your new card is: " + newCard.name
+
+                //remove card1
+                removeCardData("card1")
+                //append new card
+                appendNewCard(newCard,"card1")
+            });
             
             function removeCardData(cardToRemove) {
                 var card = document.getElementById(cardToRemove);
@@ -420,12 +501,13 @@
                         return "Unknown";
                 }
             };
+
+            //if the current player is not in the game
+            //we need to remove their cards and tell them that they're out!
+            // double check that curr player is actually not in the round anymore (safety)
             
             socket.on('eliminated', function(players){
             	console.log("I got eliminated!");
-                //if the current player is not in the game
-                //we need to remove their cards and tell them that they're out!
-                // double check that curr player is actually not in the round anymore (safety)
 
                 var stillInRound = false;
                 for(var p in players){
@@ -525,6 +607,14 @@
                 appendPlayersList(playerList, immunePlayers);
             }
 
+            function engineering(playerList, immunePlayers) {
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've played Engineering";
+                document.getElementById('information').innerHTML = "Select an opponent and trade hands with them.";
+                appendPlayersList(playerList, immunePlayers);
+
+            }
+
             function appendPlayersList(playerList, immunePlayers){
                 //Append players
                 var playersLabel = document.createElement("label");
@@ -591,6 +681,12 @@
                         cardLastClicked = undefined;
                         break;
                     case 5:
+                        var p = document.getElementById("playerSelect");
+                        var player = p.options[p.selectedIndex].value;
+                        socket.emit('target player', player, cardLastClicked.strength, null);
+                        cardLastClicked = undefined;
+                        break;
+                    case 6:
                         var p = document.getElementById("playerSelect");
                         var player = p.options[p.selectedIndex].value;
                         socket.emit('target player', player, cardLastClicked.strength, null);
@@ -743,13 +839,13 @@
         </div>
     </header>
     <!-- Modal -->
-    <div class="modal" id="gameModal">
+    <div class="modal" id="gameModal" data-backdrop='static'>
         <div class="modal-dialog">
             <div class="modal-content">
                 <!-- Modal Header -->
                 <div class="modal-header">
                     <h4 class="modal-title" id="modal-title"></h4>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <!-- <button type="button" class="close" data-dismiss="modal">&times;</button> -->
                 </div>
                 
                 <!-- Modal body -->
