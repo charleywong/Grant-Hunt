@@ -78,7 +78,6 @@ play.on('connection', function(socket){
   console.log("incoming connection from " + socket.id);
 
   socket.emit('registration request');
-  
   socket.on('register', function (data) {
     console.log("incoming registration from " + socket.id);
     if (data !== null) {
@@ -119,7 +118,7 @@ play.on('connection', function(socket){
           play.emit('update', users.length);
         }
       }
-    }, 75000);
+    }, 1);
     
   });
   
@@ -164,6 +163,7 @@ http.listen(3000, function(){
 // And starting first players game
 function startGame(){
   console.log("Starting game.");
+  play.emit('new game');
   game.status = "waiting";
   game.history = [];
   for(var i = 0; i < game.players.length; i++){
@@ -503,7 +503,7 @@ function nextTurn(){
   var output = logic.check_end_game(game);
   game = output.game;
   if (output.output == false){
-    report_end_game();
+    report_end_round();
     return;
   }
   var id = game.currentPlayer;
@@ -532,11 +532,11 @@ function eliminate_player(playerid){
   play.to(game.players[playerid]).emit('eliminated');
   var result = logic.check_end_game(game);
   game = result.game;
-  if(result.output == false) report_end_game();
+  if(result.output == false) report_end_round();
   return result.output;
 }
 
-function report_end_game(){
+function report_end_round(){
   var winners = [];
   var gameOver = false;
   var gWinners = [];
@@ -555,9 +555,7 @@ function report_end_game(){
   game.history.push("The round has finished! The winners are: " + winners);
   game.lastWinners = winners;
   if(gameOver){
-    game.status = "unstarted";
-    play.emit('game finished', gWinners);
-    users = [];
+    finish_game(gWinners);
   } else {
     game.status = "waiting";
   }
@@ -565,6 +563,14 @@ function report_end_game(){
   
   play.to('players').emit('round finished', winners);
 }
+
+function finish_game(winners){
+  
+  play.to('players').emit('game finished', winners);
+  reset();
+  
+}
+
 
 function remaining_cards() {
   return game.display_deck;
@@ -614,10 +620,28 @@ function getPlayerBySId(sid){
 function removePlayerBySId(data){
   var gameIndex = getPlayerBySId(data);
   var userIndex = getUserBySId(data);
+  usercount--;
   if(gameIndex > -1){
     //hand of -1 indicates the player has left
-    game.players[gameIndex] = -1;
-    game.playerHands[gameIndex] = -1;
+    if(game.status == 'running'){
+      game.players[userIndex] = -1;
+      game.playerHands[userIndex] = -1;
+      if(usercount == 1){
+        for(var i = 0; i < game.players.length; i++){
+          if(game.players[i] != -1){
+            console.log('all other players disconnected, player ' + i + ' wins by default');
+            finish_game([i]);
+            reset();
+          }
+        }
+      } else {
+        
+      }
+    } else {
+      game.players.splice(userIndex, 1);
+      game.playerHands.splice(gameIndex, 1);
+      game.status = "unstarted";
+    }
   }
   if(userIndex > -1){
     users.splice(userIndex, 1);
@@ -625,6 +649,7 @@ function removePlayerBySId(data){
 }
 
 function addNewUser(UId, socket){
+  usercount++;
   var SId = socket.id;
   var entry = {uniqueID: UId, socketID: SId, disconnected: false};
   users.push(entry);
@@ -632,7 +657,7 @@ function addNewUser(UId, socket){
   //if there's less than 4 players, they're added to the player room
   //otherwise they're added to the non player room
   console.log("A user has joined.");
-  if(game.players.length < 4){
+  if(game.players.length <= 4){
     console.log("Player added to players group.");
     game.players.push(socket.id);
     socket.join('players');
@@ -647,6 +672,23 @@ function addNewUser(UId, socket){
    
   //update the page to show how many users are connected
   play.emit('update', users.length);
+}
+
+function reset(){
+  game = { status: "unstarted",
+           players: [],
+           ready: [],
+           playerHands: [],
+           currentPlayer: -1,
+           deck: deck,
+           display_deck: display_deck,
+           history: [],
+           immune: [],
+           roundsWon: [],
+           lastWinners: []
+         };
+  users = [];
+  usercount = 0;
 }
 
 
@@ -716,7 +758,7 @@ function run_tests(){
   game.players = [0, 1, 2, 3]        
   
   startGame();                      
-  
+  startRound();
   //Check game state, ensuring valid
 
   //Ensure game players are unchanged
@@ -833,6 +875,7 @@ function run_tests(){
   
   console.log("Turn 1, Phase 1: Player 0 selects built environment card.");
   assert(listCmp(game.deck, [7, 8, 1, 5, 3, 4, 1, 2, 3, 6, 2]));
+  assert(game.currentPlayer == 0);
   r = turnPhaseOne(1, 1);
   assert(listCmp(r,[1, 2, 3]));
   
