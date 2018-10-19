@@ -190,7 +190,7 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3,1, 5, 1, 1, 1,7];
+  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3,1, 5, 4, 4, 4,4];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
@@ -362,7 +362,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
       game = result.game;
       var guessedCard = parseInt(guessedCard);
       if(result.output == -8){
-        play.to(game.players[id]).emit('built result', id, targetPlayer, gcardInfo.cardInfo(guessedCard), true);
+        play.to(game.players[id]).emit('built result', id, targetPlayer, cardInfo.cardInfo(guessedCard), true);
         emitMessage1 = ['built result', id, targetPlayer, guessedCard, true];
         play.to(game.players[targetPlayer]).emit('built result', id, targetPlayer, cardInfo.cardInfo(guessedCard), true);
         emitMessage2 = ['built result', id, targetPlayer, guessedCard, true];
