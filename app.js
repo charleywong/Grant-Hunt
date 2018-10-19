@@ -125,20 +125,20 @@ play.on('connection', function(socket){
   
   socket.on('play card', function(playedCard, otherCard){
     console.log("play card message received");
-    if(game.status == "running" && game.currentPlayer == getPlayerBySID(socket.id)){
+    if(game.status == "running" && game.currentPlayer == getPlayerBySId(socket.id)){
       turnPhaseOne(playedCard, otherCard);
     }
   });
   
   socket.on('target player', function(targetPlayer, playedCard, guessedCard){
     console.log("target player message received");
-    if(game.status == "running" && game.currentPlayer == getPlayerBySID(socket.id)){
+    if(game.status == "running" && game.currentPlayer == getPlayerBySId(socket.id)){
       turnPhaseTwo(targetPlayer, playedCard, guessedCard);
     }
   });
   
   socket.on('ready', function(){
-    var i = getPlayerBySID(socket.id);
+    var i = getPlayerBySId(socket.id);
     game.ready[i] = true;
     readyCheck();
   });
