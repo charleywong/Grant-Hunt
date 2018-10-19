@@ -799,7 +799,14 @@
             }
 
             function readyUp () {
+                //add confirmation to the player that they have selected to ready up
+                //maybe how many players are left to ready up
+                //use modal pop up
                 console.log("I am ready")
+                $('#gameModal').modal('show');
+                document.getElementById('modal-title').innerHTML = "You've chosen to ready up";
+                document.getElementById('information').innerHTML = "Waiting on " + "" + " players to ready up";
+
                 socket.emit("ready");
             }
 
