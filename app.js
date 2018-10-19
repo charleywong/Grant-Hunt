@@ -181,7 +181,7 @@ function startGame(){
     game.roundsWon[i] = 0;
     game.ready[i] = false;
   }
-  startRound();
+  // startRound();
 }
 
 function startRound(){
@@ -191,8 +191,8 @@ function startRound(){
   for(var i = 0; i < game.lastWinners.length; i++){
     var pnum = game.lastWinners[i];
     if(game.roundsWon[pnum] > highestWins){
-      firstPlayer = lastWinners[i];
-      highestWins = game.roundsWon(pnum);
+      firstPlayer = game.lastWinners[i];
+      highestWins = game.roundsWon[pnum];
     }
   }
   //Shuffle the deck
@@ -241,7 +241,7 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3,1, 5, 4, 4, 4,4];
+  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3,1, 5, 8, 8, 8,8];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 

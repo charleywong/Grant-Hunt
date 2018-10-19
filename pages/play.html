@@ -38,11 +38,17 @@
             });
             
             socket.on('player update', function(data){
-                if(data > 0) {
-                    document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players";
+                // if(data > 0) {
+                document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players";
                     // alert(data)
-                    document.getElementById("share-link").style.visibility = "visible";
-                } 
+                document.getElementById("share-link").style.visibility = "visible";
+                // } 
+                //show ready up button
+                //make it same width as share link
+                shareWidth = document.getElementById("share-link").offsetWidth
+                document.getElementById("start-round").style.visibility = "visible"
+                document.getElementById("start-round").style.width = shareWidth + 'px !important'
+
             });
             
             socket.on('nonplayer update', function(data){
@@ -52,57 +58,69 @@
             });
 
             socket.on('start game', function(data){
-                // hide share link button
-                document.getElementById("share-link").style.visibility = "hidden";
-                document.querySelector("header > div[class='container text-center']").style.marginTop = "-10%";
-                // remove status
-                var parentOfStatus = document.getElementById("status").parentNode;
-                parentOfStatus.removeChild(document.getElementById("status"));
-                //remove gameWait; copy button and waitingstatus
-                var parentOfWait = document.getElementById("gameWait").parentNode;
-                parentOfWait.removeChild(document.getElementById("gameWait"));
+                //forcibly close modal
+                $('#gameModal').modal('hide');
+                //we need to handle when this is the first round or the next round separately
+                if (document.getElementById("out")) {
+                    if (!document.getElementById("playbutton")) {
+                        //re-add in play button
+                        a = document.createElement("a")
+                        a.setAttribute("class","button");
+                        a.setAttribute("id","playbutton");
+                        a.setAttribute("onclick","playCard()");
+                        a.style.visibility = "hidden";
+                        a.innerHTML = "PlayCard";
 
-                // we need to show every player what their current hand is
-                var card = document.createElement("div");
-                card.setAttribute("class","card");
-                var card_body = document.createElement("div")
-                card_body.setAttribute("class","card-body");
-                
-                var cardTitle = document.createElement("h5");
-                var cardImage = document.createElement("img");
-                var cardText = document.createElement("p");
+                        // append button to somethin
+                        document.getElementById("turnend").appendChild(a)
 
-                //edit what's in the card title
-                cardTitle.style.color = "black";
-                cardTitle.innerHTML = data.name;
-                cardTitle.style.paddingBottom = "5%";
+                    }
+                    // out is the id given to h1 that tells players when they're out of the round
+                    //this part is for when it's next round
+                    // remove this part
+                    var c = document.getElementById("cards");
+                    c.removeChild(document.getElementById("out"))
+                    if (document.getElementById("out")) {
+                        //since players who aren't the winners have two h1s with id out
+                        c.removeChild(document.getElementById("out"))
+                    }
+                    // hide next round button
+                    var nextR = document.getElementById("nextRound");
+                    nextR.parentNode.removeChild(nextR);
 
-                var image = "/images/"+data.strength+".png";
-                cardImage.setAttribute("src", image);
-                cardImage.style.width = "50%";
-                cardText.style.color = "black";
-                cardText.style.paddingTop = "5%";
+                    //reappend cards
+                    appendNewCard(data,"card1")
+                    document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
 
-                //edit what's in the text section of the card
-                cardText.style.color = "black";
-                cardText.innerHTML = "Strength: " + data.strength + "<br>Effect: " + data.description;
-                card_body.appendChild(cardTitle);
-                card_body.appendChild(cardImage);
-                card_body.appendChild(cardText);
-                card.appendChild(card_body);
+                } else {
+                    if (!document.getElementById("playbutton")) {
+                        //re-add in play button
+                        a = document.createElement("a")
+                        a.setAttribute("class","button");
+                        a.setAttribute("id","playbutton");
+                        a.setAttribute("onclick","playCard()");
+                        a.innerHTML = "PlayCard";
+                        document.getElementById("turnend").appendChild(a)
+                    }
+                    // hide share link button
+                    document.getElementById("share-link").style.visibility = "hidden";
+                    //hide start round
+                    document.getElementById("start-round").style.visibility = "hidden";
+                    
+                    document.querySelector("header > div[class='container text-center']").style.marginTop = "-10%";
+                    // remove status
+                    var parentOfStatus = document.getElementById("status").parentNode;
+                    parentOfStatus.removeChild(document.getElementById("status"));
+                    //remove gameWait; copy button and waitingstatus
+                    var parentOfWait = document.getElementById("gameWait").parentNode;
+                    parentOfWait.removeChild(document.getElementById("gameWait"));
 
-                document.getElementById("gamewindow").style.visibility = "visible";
-                document.getElementById("card1").appendChild(card);
-                // document.getElementById("card2").appendChild(dupCard);
-                document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
-                // document.getElementById("playbutton").onclick = function() {
-                    // document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
-                //     socket.emit('end turn');
-                //     return false;
-                // };
-                
-                
+                    // we need to show every player what their current hand is
+                    appendNewCard(data,"card1")
 
+                    document.getElementById("gamewindow").style.visibility = "visible";
+                    document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
+                }
             });
             
             socket.on('remaining players', function(remainingPlayersInGame, remainingPlayersInRound, pId){
@@ -120,6 +138,7 @@
                         row.setAttribute("name", "player-status");
                         var player = document.createElement("td");
                         var roundsWon = document.createElement("td");
+                        // need to change this so that it's not hard coded
                         roundsWon.innerHTML = "0";
                         player.innerHTML = p;
                         if(!remainingPlayersInRound.includes(remainingPlayersInGame[p])){
@@ -173,6 +192,7 @@
                 document.getElementById("playbutton").style.visibility = "visible";
 
                 // var card1 = document.getElementById("card1").childNodes;
+                console.log(card)
                 appendNewCard(card, "card2");
 
                 // only allow current player be able to click anything
@@ -255,9 +275,17 @@
                     // only 1 winner
                     if (winners[0] == playerId) {
                         message.innerHTML = "You are the winner of this round"
+                        // we also need to increment the winner's rounds won
+                        // this is under assumption that there is only 1 winner
+                        var query = "tbody[id='players'] > tr:nth-child(" + String(parseInt(winners[0])+1) + ") > td:nth-child(2)"
+                        console.log(query)
+                        var winnerInTable = document.querySelector(query);
+                        console.log(winnerInTable);
+                        winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
                     } else {
                         message.innerHTML = "Player " + winners[0] + " is the winner of this round"    
                     }
+                    
                     
                 } else {
                     message.innerHTML = "Players ";
@@ -267,8 +295,12 @@
                         } else {
                             message.innerHTML = message.innerHTML + ' ' + winners[i] + ', ';
                         }
+                        // we also need to increment the winner's rounds won
+                        var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(" + winners[i]+1 + ") > td:nth-child(2)");
+                        winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
                     }
                     message.innerHTML += " are the winners of this round!";
+
                 }
 
                 
@@ -277,14 +309,13 @@
                 message.setAttribute("id", "out");
                 row.appendChild(message);
 
-                // we also need to increment the winner's rounds won
-                var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(4) > td:nth-child(2)");
-                winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
+
 
                 //add a button 'next round' that all players must click in order to move onto the next round
                 //first, remove play card button
                 var playCard = document.getElementById("playbutton");
                 playCard.parentNode.removeChild(playCard);
+                // playCard.style.visibility = "hidden";
                 var nextRoundButton = document.createElement("a")
                 nextRoundButton.innerHTML = "Next Round"
                 nextRoundButton.setAttribute("class", "button")
@@ -797,15 +828,18 @@
 
             }
 
-            function readyUp () {
+            function readyUp() {
                 //add confirmation to the player that they have selected to ready up
                 //maybe how many players are left to ready up
                 //use modal pop up
                 console.log("I am ready")
                 $('#gameModal').modal('show');
                 document.getElementById('modal-title').innerHTML = "You've chosen to ready up";
-                document.getElementById('information').innerHTML = "Waiting on " + "" + " players to ready up";
-
+                document.getElementById('information').innerHTML = "We are currently waiting for other players to ready up. Please be patient.";
+                // document.getElementById('information').innerHTML = "Waiting on " + "" + " players to ready up";
+                // completely remove the modal button
+                document.getElementById('modal-submit').style.display = "none";
+                // submitModalButtonSwitch(null);
                 socket.emit("ready");
             }
 
@@ -831,9 +865,10 @@
             <div id='gameWait' class="waiting">
                 <p id="waitingstatus" class="loading status"></p>
                 <a class="button" id="share-link" onclick="copyToClipboard()" style="visibility: hidden;">Click to copy shareable link!</a>
+                <a class="button" id="start-round" onclick="readyUp()" style="visibility: hidden;">Click to ready up!</a>
             </div>
-            <div id="gamewindow" action="" style="visibility: hidden; --gwidth: 100%" >
-                <div class="game-sidebar" id="game-sidebar"style="width: calc(var(--gwidth)*0.2)">
+            <div id="gamewindow" action="" style="visibility: hidden;" >
+                <div class="game-sidebar" id="game-sidebar">
                     <div class="history" id="history" >
                         <h6>HISTORY</h6>
                         <hr>
