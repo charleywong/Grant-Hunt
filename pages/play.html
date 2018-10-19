@@ -128,6 +128,7 @@
                 playersInRound = remainingPlayersInRound;
                 playerId = pId;
                 if(!document.getElementById("players")){
+
                     //add players count
                     var table = document.getElementsByClassName("player-table")[0];
                     var tbody = document.createElement("tbody");
@@ -138,7 +139,6 @@
                         row.setAttribute("name", "player-status");
                         var player = document.createElement("td");
                         var roundsWon = document.createElement("td");
-                        // need to change this so that it's not hard coded
                         roundsWon.innerHTML = "0";
                         player.innerHTML = p;
                         if(!remainingPlayersInRound.includes(remainingPlayersInGame[p])){
@@ -192,7 +192,7 @@
                 document.getElementById("playbutton").style.visibility = "visible";
 
                 // var card1 = document.getElementById("card1").childNodes;
-                console.log(card)
+                // console.log(card)
                 appendNewCard(card, "card2");
 
                 // only allow current player be able to click anything
@@ -275,16 +275,14 @@
                     // only 1 winner
                     if (winners[0] == playerId) {
                         message.innerHTML = "You are the winner of this round"
-                        // we also need to increment the winner's rounds won
-                        // this is under assumption that there is only 1 winner
-                        var query = "tbody[id='players'] > tr:nth-child(" + String(parseInt(winners[0])+1) + ") > td:nth-child(2)"
-                        console.log(query)
-                        var winnerInTable = document.querySelector(query);
-                        console.log(winnerInTable);
-                        winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
                     } else {
                         message.innerHTML = "Player " + winners[0] + " is the winner of this round"    
                     }
+                    // we also need to increment the winner's rounds won
+                    // this is under assumption that there is only 1 winner
+                    var query = "tbody[id='players'] > tr:nth-child(" + String(parseInt(winners[0])+1) + ") > td:nth-child(2)"
+                    var winnerInTable = document.querySelector(query);
+                    winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
                     
                     
                 } else {
@@ -512,7 +510,11 @@
                 if (!cardLastClicked && !otherPlayerCard) {
                     // player has not selected anything
                     // let player know that they cannot proceed until they select a card
-                    alert("You cannot proceed until you have chosen a card to play");
+                    // show modal
+                    $('#gameModal').modal.show()
+                    document.getElementById('modal-title').innerHTML = "Wait a minute....";
+                    document.getElementById('information').innerHTML = "You haven't selected any card to play! You can't proceed without selecting and playing a card!";
+                    submitModalButtonSwitch(null);
                     return;
                 }
 
