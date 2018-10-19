@@ -143,32 +143,6 @@
                         }
                     }
                 }
-                
-                //if the current player is not in the game
-                //we need to remove their cards and tell them that they're out!
-                var stillInRound = false;
-                for(var p in playersInRound){
-                    if(playersInRound[p] == playerId){
-                        stillInRound = true;
-                        console.log("player " + playerId + " is still in the game")
-                        break;
-                    }
-                }
-                if(!stillInRound && !document.getElementById('out')){
-                    console.log("player " + playerId + " is NOT in the game")
-                    //make sure they have no cards in their hand
-                    removeCardData("card1");
-                    removeCardData("card2");
-                    document.getElementById("turnstatus").innerHTML = "";
-                    //display you're out message!
-                    var row = document.getElementById("cards");
-                    var message = document.createElement("h1");
-                    message.innerHTML = "YOU'RE OUT OF THE ROUND!";
-                    message.style.marginLeft = "auto";
-                    message.style.marginRight = "auto";
-                    message.setAttribute("id", "out");
-                    row.appendChild(message);
-                }
 
             });
             
@@ -447,8 +421,35 @@
                 }
             };
             
-            socket.on('eliminated', function(){
+            socket.on('eliminated', function(players){
             	console.log("I got eliminated!");
+                //if the current player is not in the game
+                //we need to remove their cards and tell them that they're out!
+                // double check that curr player is actually not in the round anymore (safety)
+
+                var stillInRound = false;
+                for(var p in players){
+                    if(players[p] == playerId){
+                        stillInRound = true;
+                        console.log("player " + playerId + " is still in the game")
+                        break;
+                    }
+                }
+                if(!stillInRound && !document.getElementById('out')){
+                    console.log("player " + playerId + " is NOT in the game")
+                    //make sure they have no cards in their hand
+                    removeCardData("card1");
+                    removeCardData("card2");
+                    document.getElementById("turnstatus").innerHTML = "";
+                    //display you're out message!
+                    var row = document.getElementById("cards");
+                    var message = document.createElement("h1");
+                    message.innerHTML = "YOU'RE OUT OF THE ROUND!";
+                    message.style.marginLeft = "auto";
+                    message.style.marginRight = "auto";
+                    message.setAttribute("id", "out");
+                    row.appendChild(message);
+                }
             });
 
 
@@ -468,10 +469,6 @@
 
                 }
             }
-            
-            socket.on('eliminated', function(){
-            	console.log("I got eliminated!");
-            });
 
             function builtEnvironment(playerList, immunePlayers){
                 $('#gameModal').modal('show');
@@ -539,12 +536,10 @@
                 players.setAttribute("id", "playerSelect");
                 players.setAttribute("name", "playerSelect");
                 players.setAttribute("class", "form-control");
-
                 for (var p in playersInRound){
                     //create an <option> to add the <select>
                     var child = document.createElement("option");
                     //assign values to the <option>
-
                     if(playerId == playersInRound[p]){
                         child.textContent = playersInRound[p] + " (You)";
                     } else {
@@ -552,8 +547,7 @@
                     }
                     
                     // check if the player is immune
-
-                    if (immunePlayers[playersInRound[p]]) {
+                    if (immunePlayers.includes(playersInRound[p])) {
                         child.textContent = child.textContent + " (Medicine)";
                         child.value = child.value + " (Medicine)";
                         // also need to disable this option
