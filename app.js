@@ -154,17 +154,21 @@ http.listen(3000, function(){
 
 function  readyCheck(){
   var readyCount = 0;
+  var playercount = 0;
   if(game.status == "waiting"){
-    for(var j = 0; j< game.players.length; j++){
-      if(game.players[j] != -1 && (game.ready[j])){
-        readyCount++;
+    for(var j = 0; j < game.players.length; j++){
+      if(game.players[j] != -1){
+        playercount++;
+        if(game.ready[j]){
+          readyCount++;
+        }
       }
     }
-  }
-  if(readyCount == usercount){
-    startRound();
-  } else {
-    play.emit('ready count', usercount - readyCount);
+    if(readyCount == playercount){
+      startRound();
+    } else {
+      play.emit('ready count', playercount - readyCount);
+    }
   }
 }
 
@@ -181,18 +185,18 @@ function startGame(){
     game.roundsWon[i] = 0;
     game.ready[i] = false;
   }
-  startRound();
+  // startRound();
 }
 
 function startRound(){
-  game.history.push("Starting new round...");
+  game.history.push("<strong>Starting new round...<strong>");
   var firstPlayer = 0;
   var highestWins = 0;
   for(var i = 0; i < game.lastWinners.length; i++){
     var pnum = game.lastWinners[i];
     if(game.roundsWon[pnum] > highestWins){
-      firstPlayer = lastWinners[i];
-      highestWins = game.roundsWon(pnum);
+      firstPlayer = game.lastWinners[i];
+      highestWins = game.roundsWon[pnum];
     }
   }
   //Shuffle the deck
@@ -241,7 +245,7 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3,1, 5, 4, 4, 4,4];
+  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3,1, 5, 8, 8, 8,8];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
@@ -318,6 +322,7 @@ function playersInGame(){
   }
   play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
   spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  spectate.emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, null);
 }
 
 // Prepare for Phase One of a turn
@@ -571,8 +576,24 @@ function report_end_round(){
     }
     game.ready[i] = false;
   }
+
+  winner_str = "<strong>The round has finished!";
+  if(winners.length > 1){
+    winner_str += " The winners are:";
+    for(var j=0; j<winners.length; j++){
+      winner_str += " Player ";
+      winner_str += winners[j];
+      if(winners[j] != winners[winners.length-1]){
+        winner_str +=  ", ";
+      }
+    }
+  } else {
+    winner_str += " The winner is Player " + winners;
+  }
+  winner_str += "</strong>";
+  game.history.push(winner_str);
   console.log("PLAY LOG: The round has finished. The winners are: " + winners);
-  game.history.push("The round has finished! The winners are: " + winners);
+ 
   game.lastWinners = winners;
   if(gameOver){
     finish_game(gWinners);
@@ -585,7 +606,23 @@ function report_end_round(){
 }
 
 function finish_game(winners){
-  
+  winner_str = "<strong>The game has ended!";
+  if(winners.length > 1){
+    winner_str += " The winners are:";
+    for(var j=0; j<winners.length; j++){
+      winner_str += " Player ";
+      winner_str += winners[j];
+      if(winners[j] != winners[winners.length-1]){
+        winner_str +=  ", ";
+      }
+    }
+  } else {
+    winner_str += " The winner is Player " + winners;
+  }
+  winner_str += "</strong>";
+  game.history.push(winner_str);
+  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
   play.to('players').emit('game finished', winners);
   reset();
   
@@ -701,7 +738,7 @@ function addNewUser(UId, socket){
   //if there's less than 4 players, they're added to the player room
   //otherwise they're added to the non player room
   console.log("A user has joined.");
-  if(game.players.length <= 4){
+  if(game.players.length < 4){
     console.log("Player added to players group.");
     game.players.push(socket.id);
     socket.join('players');
