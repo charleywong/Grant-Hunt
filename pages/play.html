@@ -143,6 +143,7 @@
                 playersInGame = remainingPlayersInGame;
                 playersInRound = remainingPlayersInRound;
                 playerId = pId;
+                console.log("remaining players");
                 if(!document.getElementById("players")){
                     //add players count
                     var table = document.getElementsByClassName("player-table")[0];
@@ -185,6 +186,7 @@
             });
             
             socket.on('game update', function(currentPlayer, display_deck, history, immune){
+                console.log("Game update");
                 var historyContent = document.getElementById('history-content');
                 removeCardData('history-content');
                 console.log(history)
