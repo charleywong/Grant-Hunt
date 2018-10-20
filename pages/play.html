@@ -554,7 +554,7 @@
                     // player has not selected anything
                     // let player know that they cannot proceed until they select a card
                     // show modal
-                    $('#gameModal').modal.show()
+                    $('#gameModal').modal('show');
                     document.getElementById('modal-title').innerHTML = "Wait a minute....";
                     document.getElementById('information').innerHTML = "You haven't selected any card to play! You can't proceed without selecting and playing a card!";
                     submitModalButtonSwitch(null);
