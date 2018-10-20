@@ -4,7 +4,6 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var assert = require('assert');
 var play = io.of('/play');
-var spectate = io.of('/spectate');
 
 var usercount = 0;
 
@@ -320,9 +319,8 @@ function playersInGame(){
     pId = p;
     play.to(game.players[p]).emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, pId);
   }
-  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-  spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-  spectate.emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, null);
+  play.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  play.to('nonplayers').emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, null);
 }
 
 // Prepare for Phase One of a turn
@@ -621,8 +619,7 @@ function finish_game(winners){
   }
   winner_str += "</strong>";
   game.history.push(winner_str);
-  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-  spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  play.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
   play.to('players').emit('game finished', winners);
   reset();
   
@@ -677,9 +674,9 @@ function getPlayerBySId(sid){
 function removePlayerBySId(data){
   var gameIndex = getPlayerBySId(data);
   var userIndex = getUserBySId(data);
-  usercount--;
+  
   if(gameIndex > -1){
-    
+    usercount--;
     //hand of -1 indicates the player has left
     if(game.status == 'running'){
       var card = game.playerHands[gameIndex];
@@ -702,8 +699,7 @@ function removePlayerBySId(data){
           nextTurn();
         }
         game.history.push(message);
-        play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-        spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+        play.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
       }
     } else if(game.status == 'waiting'){
       game.players[userIndex] = -1;
@@ -730,7 +726,7 @@ function removePlayerBySId(data){
 }
 
 function addNewUser(UId, socket){
-  usercount++;
+  
   var SId = socket.id;
   var entry = {uniqueID: UId, socketID: SId, disconnected: false};
   users.push(entry);
@@ -739,15 +735,16 @@ function addNewUser(UId, socket){
   //otherwise they're added to the non player room
   console.log("A user has joined.");
   if(game.players.length < 4){
+    usercount++;
     console.log("Player added to players group.");
     game.players.push(socket.id);
     socket.join('players');
     if(game.players.length == 4){
       startGame();
-      
     }
     play.to('players').emit('player update', 4 - users.length);
   } else {
+    socket.join('nonplayers');
     play.to(SId).emit('game full');
   }
    
