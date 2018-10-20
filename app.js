@@ -579,7 +579,8 @@ function report_end_round(){
 
 function finish_game(winners){
   
-  play.to('players').emit('game finished', winners);
+  play.to('players').emit('game finished', winners, "player");
+  play.to('nonplayers').emit('game finished', winners, "nonplayer");
   reset();
   
 }
