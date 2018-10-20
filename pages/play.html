@@ -69,6 +69,10 @@
                 // remove status
                 var parentOfStatus = document.getElementById("status").parentNode;
                 parentOfStatus.removeChild(document.getElementById("status"));
+                var parentOfShare = document.getElementById("share-link").parentNode;
+                parentOfShare.removeChild(document.getElementById("share-link"));
+                var parentOfStart = document.getElementById("start-round").parentNode;
+                parentOfStart.removeChild(document.getElementById("start-round"));
                 //remove gamewindow
                 var parentOfWait = document.getElementById("gamewindow").parentNode;
                 parentOfWait.removeChild(document.getElementById("gamewindow"));
@@ -274,76 +278,92 @@
 
             });
 
-            socket.on('round finished', function(winners) {
+            socket.on('round finished', function(winners, status) {
                 if(gameOver == false){
                     console.log("round FINISHED");
                     winnersSoFar = winners;
                     // remove cards
                     // show who has won the game
                     //
-                    removeCardData("card1");
-                    removeCardData("card2");
+                    if(document.getElementById("card1") || document.getElementById("card2")){
+                        removeCardData("card1");
+                        removeCardData("card2");
+                    }
+                    
+                    if(document.getElementById("playbutton")){
+                        document.getElementById("playbutton").style.visibility = "hidden";
+                    }
+                    
+                    if( document.getElementById("turnstatus")){
+                        document.getElementById("turnstatus").innerHTML = "";
+                    }
 
-                    document.getElementById("playbutton").style.visibility = "hidden";
-                    document.getElementById("turnstatus").innerHTML = "";
+                    
                     //display you're out message!
                     if(document.getElementById("out")){
                         var outmsg = document.getElementById("out");
                         outmsg.parentNode.removeChild(outmsg);
                     }
-                
-                    var row = document.getElementById("cards");
-                    var message = document.createElement("h1");
-                    if (winners.length == 1) {
-                        // only 1 winner
-                        if (winners[0] == playerId) {
-                            message.innerHTML = "You are the winner of this round"
-                        } else {
-                            message.innerHTML = "Player " + winners[0] + " is the winner of this round"    
-                        }
-                        // we also need to increment the winner's rounds won
-                        // this is under assumption that there is only 1 winner
-                        var query = "tbody[id='players'] > tr:nth-child(" + String(parseInt(winners[0])+1) + ") > td:nth-child(2)"
-                        var winnerInTable = document.querySelector(query);
-                        winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
-                        
-                        
-                    } else {
-                        message.innerHTML = "Players ";
-                        for (var i = 0; i < winners.length; i ++) {
-                            if (i == winners.length-1) {
-                                message.innerHTML = message.innerHTML + ' and ' + winners[i];
+
+                    if(status == "player"){
+                        var row = document.getElementById("cards");
+                        var message = document.createElement("h1");
+                        if (winners.length == 1) {
+                            // only 1 winner
+                            if (winners[0] == playerId) {
+                                message.innerHTML = "You are the winner of this round"
                             } else {
-                                message.innerHTML = message.innerHTML + ' ' + winners[i] + ', ';
+                                message.innerHTML = "Player " + winners[0] + " is the winner of this round"    
                             }
                             // we also need to increment the winner's rounds won
-                            var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(" + winners[i]+1 + ") > td:nth-child(2)");
-                            winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
+                            // this is under assumption that there is only 1 winner
+                            var query = "tbody[id='players'] > tr:nth-child(" + String(parseInt(winners[0])+1) + ") > td:nth-child(2)"
+                            var winnerInTable = document.querySelector(query);
+                            winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1  
+                        } else {
+                            message.innerHTML = "Players ";
+                            for (var i = 0; i < winners.length; i ++) {
+                                if (i == winners.length-1) {
+                                    message.innerHTML = message.innerHTML + ' and ' + winners[i];
+                                } else {
+                                    message.innerHTML = message.innerHTML + ' ' + winners[i] + ', ';
+                                }
+                                // we also need to increment the winner's rounds won
+                                var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(" + winners[i]+1 + ") > td:nth-child(2)");
+                                winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
+                            }
+                            message.innerHTML += " are the winners of this round!";
                         }
-                        message.innerHTML += " are the winners of this round!";
+                        message.style.marginLeft = "auto";
+                        message.style.marginRight = "auto";
+                        message.setAttribute("id", "out");
+                        row.appendChild(message);
 
+                        //add a button 'next round' that all players must click in order to move onto the next round
+                        //first, remove play card button
+                        var playCard = document.getElementById("playbutton");
+                        playCard.parentNode.removeChild(playCard);
+                        var nextRoundButton = document.createElement("a")
+                        nextRoundButton.innerHTML = "Next Round"
+                        nextRoundButton.setAttribute("class", "button-full")
+                        nextRoundButton.setAttribute("id","nextRound")
+                        nextRoundButton.setAttribute("onclick","readyUp()")
+                        document.getElementById("turnend").appendChild(nextRoundButton)
+                        //let all players know who has pressed that button
+                    } else {
+                        if(winners.length == 1){
+                            var query = "tbody[id='players'] > tr:nth-child(" + String(parseInt(winners[0])+1) + ") > td:nth-child(2)"
+                            var winnerInTable = document.querySelector(query);
+                            winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1  
+                        } else {
+                            for (var i = 0; i < winners.length; i ++) {
+                                // we also need to increment the winner's rounds won
+                                var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(" + winners[i]+1 + ") > td:nth-child(2)");
+                                winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
+                            }
+                        }
                     }
-
                     
-                    message.style.marginLeft = "auto";
-                    message.style.marginRight = "auto";
-                    message.setAttribute("id", "out");
-                    row.appendChild(message);
-
-
-
-                    //add a button 'next round' that all players must click in order to move onto the next round
-                    //first, remove play card button
-                    var playCard = document.getElementById("playbutton");
-                    playCard.parentNode.removeChild(playCard);
-                    // playCard.style.visibility = "hidden";
-                    var nextRoundButton = document.createElement("a")
-                    nextRoundButton.innerHTML = "Next Round"
-                    nextRoundButton.setAttribute("class", "button-full")
-                    nextRoundButton.setAttribute("id","nextRound")
-                    nextRoundButton.setAttribute("onclick","readyUp()")
-                    document.getElementById("turnend").appendChild(nextRoundButton)
-                    //let all players know who has pressed that button
                 }
             });
 
@@ -534,7 +554,7 @@
                     // player has not selected anything
                     // let player know that they cannot proceed until they select a card
                     // show modal
-                    $('#gameModal').modal.show()
+                    $('#gameModal').modal('show');
                     document.getElementById('modal-title').innerHTML = "Wait a minute....";
                     document.getElementById('information').innerHTML = "You haven't selected any card to play! You can't proceed without selecting and playing a card!";
                     submitModalButtonSwitch(null);
@@ -869,21 +889,43 @@
                 socket.emit("ready");
             }
 
-            socket.on('game finished',function(winners) {
+            socket.on('game finished',function(winners, status) {
                 console.log("Game over!");
                 
                 //make sure they have no cards in their hand
-                removeCardData("card1");
-                removeCardData("card2");
-
+                if(document.getElementById("card1")){
+                    removeCardData("card1");
+                }
+                if(document.getElementById("card2")){
+                    removeCardData("card2");
+                }
+                
                 if(document.getElementById("out")){
                     var outmsg = document.getElementById("out");
                     outmsg.parentNode.removeChild(outmsg);
                 }
+
+                if(document.getElementById("playbutton")){
+                    var playbtn = document.getElementById("playbutton");
+                    playbtn.parentNode.removeChild(playbtn);
+                }
             
-                document.getElementById("turnstatus").innerHTML = "";
+                if(document.getElementById("turnstatus")){
+                    document.getElementById("turnstatus").innerHTML = "";
+                }
+                
                 //display you're out message!
-                var row = document.getElementById("cards");
+                if(status == "player"){
+                    var row = document.getElementById("cards");
+                } else {
+                    var row = document.getElementById("history");
+                    //need to remove the history
+                    var history = document.getElementById("history-content");
+                    history.parentNode.removeChild(history);
+                    var historyHead = document.getElementById("history-head");
+                    historyHead.parentNode.removeChild(historyHead);
+                }
+                
                 var message = document.createElement("h1");
                 var text = "THE GAME HAS ENDED!<br>";
                 if(winners.length > 1){
@@ -907,21 +949,27 @@
                 }
                
                 message.innerHTML = text;
+                message.setAttribute("id", "out");
                 message.style.marginLeft = "auto";
                 message.style.marginRight = "auto";
-                message.setAttribute("id", "out");
                 row.appendChild(message);
                 
-                document.getElementById("playbutton").style.visibility = "hidden";
                 //create a button to go back to the play page
                 var playAgainButton = document.createElement("a")
-                playAgainButton.innerHTML = "Play again"
                 playAgainButton.setAttribute("class", "button")
                 playAgainButton.setAttribute("id","playPage")
                 playAgainButton.setAttribute("onclick","window.location.reload()")
                 playAgainButton.style.marginLeft = "auto";
                 playAgainButton.style.marginRight = "auto";
-                document.getElementById("turnend").appendChild(playAgainButton)
+                if(status == "player"){
+                    playAgainButton.innerHTML = "Play again";
+                    document.getElementById("turnend").appendChild(playAgainButton)
+                } else {
+                    document.getElementById('out').style.paddingBottom = "3%";
+                    playAgainButton.innerHTML = "Join next game";
+                    row.appendChild(playAgainButton)
+                }
+                
                 gameOver = true;
             });
         </script>
@@ -946,12 +994,13 @@
                 <a class="button-full" id="start-round" onclick="readyUp()">Click to ready up!</a>
             </div>
 
-            <div id='gameInAction' style="visibility: hidden;">
-                <div class="game history" id="history" >
-                    <h6>HISTORY</h6>
-                    <hr>
-                    <div id="history-content" class="history-content">
+            <div id='gameInAction' style="visibility: hidden; height:100%;">
+                <div class="game gameInAction-history" id="history" >
+                    <div id="history-head">
+                        <h6>HISTORY</h6>
+                        <hr>
                     </div>
+                    <div id="history-content" class="history-content"></div>
                 </div>
                 <div class="game-sidebar" id="game-sidebar">
                     <div id="player">

@@ -188,7 +188,7 @@ function startGame(){
 }
 
 function startRound(){
-  game.history.push("<strong>Starting new round...<strong>");
+  game.history.push("<strong>Starting new round...</strong>");
   var firstPlayer = 0;
   var highestWins = 0;
   for(var i = 0; i < game.lastWinners.length; i++){
@@ -600,7 +600,8 @@ function report_end_round(){
   }
   
   
-  play.to('players').emit('round finished', winners);
+  play.to('players').emit('round finished', winners, "player");
+  play.to('nonplayers').emit('round finished', winners, "nonplayer");
 }
 
 function finish_game(winners){
@@ -620,7 +621,8 @@ function finish_game(winners){
   winner_str += "</strong>";
   game.history.push(winner_str);
   play.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-  play.to('players').emit('game finished', winners);
+  play.to('players').emit('game finished', winners, "player");
+  play.to('nonplayers').emit('game finished', winners, "nonplayer");
   reset();
   
 }

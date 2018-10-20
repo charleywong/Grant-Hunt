@@ -66,7 +66,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .history {
-	height:45%;
+	height:40%;
+}
+
+.gameInAction-history{
+	height:80%;
 }
 
 .history-content {
