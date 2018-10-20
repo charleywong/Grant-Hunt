@@ -746,8 +746,9 @@ function addNewUser(UId, socket){
   } else {
     socket.join('nonplayers');
     play.to(SId).emit('game full');
+    socket.join('nonplayers');
   }
-   
+  
   //update the page to show how many users are connected
   play.emit('update', users.length);
 }
