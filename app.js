@@ -189,7 +189,7 @@ function startGame(){
 }
 
 function startRound(){
-  game.history.push("Starting new round...");
+  game.history.push("<strong>Starting new round...<strong>");
   var firstPlayer = 0;
   var highestWins = 0;
   for(var i = 0; i < game.lastWinners.length; i++){
@@ -576,9 +576,10 @@ function report_end_round(){
     }
     game.ready[i] = false;
   }
-  winner_str = "The round has finished!";
+
+  winner_str = "<strong>The round has finished!";
   if(winners.length > 1){
-    winner_str += "The winners are:";
+    winner_str += " The winners are:";
     for(var j=0; j<winners.length; j++){
       winner_str += " Player ";
       winner_str += winners[j];
@@ -587,8 +588,9 @@ function report_end_round(){
       }
     }
   } else {
-    winner_str += "The winner is: " + winner;
+    winner_str += " The winner is Player " + winners;
   }
+  winner_str += "</strong>";
   game.history.push(winner_str);
   console.log("PLAY LOG: The round has finished. The winners are: " + winners);
  
@@ -604,7 +606,23 @@ function report_end_round(){
 }
 
 function finish_game(winners){
-  
+  winner_str = "<strong>The game has ended!";
+  if(winners.length > 1){
+    winner_str += " The winners are:";
+    for(var j=0; j<winners.length; j++){
+      winner_str += " Player ";
+      winner_str += winners[j];
+      if(winners[j] != winners[winners.length-1]){
+        winner_str +=  ", ";
+      }
+    }
+  } else {
+    winner_str += " The winner is Player " + winners;
+  }
+  winner_str += "</strong>";
+  game.history.push(winner_str);
+  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
   play.to('players').emit('game finished', winners);
   reset();
   
@@ -720,7 +738,7 @@ function addNewUser(UId, socket){
   //if there's less than 4 players, they're added to the player room
   //otherwise they're added to the non player room
   console.log("A user has joined.");
-  if(game.players.length <= 4){
+  if(game.players.length < 4){
     console.log("Player added to players group.");
     game.players.push(socket.id);
     socket.join('players');
