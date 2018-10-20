@@ -6,10 +6,10 @@ module.exports = {
         card.name = "Empty";
         card.description = "You don't have a card!"
         break;
-    case 1:
-      card.name = "Built Environment";
-      card.description = "Choose a player and guess a card. If that player is holding that card, they discard it.";
-      break;
+      case 1:
+        card.name = "Built Environment";
+        card.description = "Choose a player and guess a card. If that player is holding that card, they discard it.";
+        break;
       case 2:
         card.name = "Arts";
         card.description = "Choose a player and view their hand.";
@@ -54,10 +54,10 @@ function cardInfo(cardID){
       card.name = "Empty";
       card.description = "You don't have a card!"
       break;
-  case 1:
-    card.name = "Built Environment";
-    card.description = "Choose a player and guess a card. If that player is holding that card, they discard it.";
-    break;
+    case 1:
+      card.name = "Built Environment";
+      card.description = "Choose a player and guess a card. If that player is holding that card, they discard it.";
+      break;
     case 2:
       card.name = "Arts";
       card.description = "Choose a player and view their hand.";

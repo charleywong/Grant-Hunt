@@ -4,7 +4,6 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var assert = require('assert');
 var play = io.of('/play');
-var spectate = io.of('/spectate');
 
 var usercount = 0;
 
@@ -125,6 +124,9 @@ play.on('connection', function(socket){
   
   socket.on('play card', function(playedCard, otherCard){
     console.log("play card message received");
+    console.log("played card: " + playedCard)
+    console.log("other card in hand: " + otherCard)
+    // turnPhaseOne(playedCard, otherCard);
     if(game.status == "running" && game.currentPlayer == getPlayerBySId(socket.id)){
       turnPhaseOne(playedCard, otherCard);
     }
@@ -151,17 +153,21 @@ http.listen(3000, function(){
 
 function  readyCheck(){
   var readyCount = 0;
+  var playercount = 0;
   if(game.status == "waiting"){
-    for(var j = 0; j< game.players.length; j++){
-      if(game.players[j] != -1 && (game.ready[j])){
-        readyCount++;
+    for(var j = 0; j < game.players.length; j++){
+      if(game.players[j] != -1){
+        playercount++;
+        if(game.ready[j]){
+          readyCount++;
+        }
       }
     }
-  }
-  if(readyCount == usercount){
-    startRound();
-  } else {
-    play.emit('ready count', usercount - readyCount);
+    if(readyCount == playercount){
+      startRound();
+    } else {
+      play.emit('ready count', playercount - readyCount);
+    }
   }
 }
 
@@ -178,18 +184,18 @@ function startGame(){
     game.roundsWon[i] = 0;
     game.ready[i] = false;
   }
-  startRound();
+  // startRound();
 }
 
 function startRound(){
-  game.history.push("Starting new round...");
+  game.history.push("<strong>Starting new round...</strong>");
   var firstPlayer = 0;
   var highestWins = 0;
   for(var i = 0; i < game.lastWinners.length; i++){
     var pnum = game.lastWinners[i];
     if(game.roundsWon[pnum] > highestWins){
-      firstPlayer = lastWinners[i];
-      highestWins = game.roundsWon(pnum);
+      firstPlayer = game.lastWinners[i];
+      highestWins = game.roundsWon[pnum];
     }
   }
   //Shuffle the deck
@@ -238,7 +244,7 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3, 1, 1, 1, 1, 8];
+  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3,1, 5, 8, 8, 8,8];
   //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
@@ -247,6 +253,7 @@ function newDeck(){
 //create tuple and add to log
 function play_log_tuple (player, card, guessedCard, target, result) {
   var string = "Player " + player + " ";
+  var guessedCard = parseInt(guessedCard);
   switch(card){
     case 1:
       string = string + "played Built Environment. They guessed Player " + target + " had " + cardInfo.cardInfo(guessedCard).name + ", ";
@@ -263,8 +270,10 @@ function play_log_tuple (player, card, guessedCard, target, result) {
       string = string + "targeted Player " + target + " with a Law card, "
       if(result == 8){
         string = string + "and lost! Player " + player + " is eliminated from the round.";
-      } else {
+      } else if(result == -8) {
         string = string + "and won! Player " + target + " is eliminated from the round."; 
+      } else {
+        string = string + "and nothing happened!"; 
       }
       break;
     case 4: 
@@ -284,7 +293,7 @@ function play_log_tuple (player, card, guessedCard, target, result) {
       string = string + "discarded their Business card.";
       break;
     case 8:
-      string = string + "discarded UNSW, and are eliminated from the round!";
+      string = string + "discarded UNSW, and is eliminated from the round!";
       break;
     default:
       string = "Error handling play history: Unknown card played.";  
@@ -310,8 +319,8 @@ function playersInGame(){
     pId = p;
     play.to(game.players[p]).emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, pId);
   }
-  play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-  spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  play.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  play.to('nonplayers').emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, null);
 }
 
 // Prepare for Phase One of a turn
@@ -355,7 +364,7 @@ function turnPhaseOne(playedCard, otherCard){
     }
   } else if(result == 7){
     //Send a message to say that play is invalid
-    play.to(game.players[id]).emit('invalid play');
+    play.to(game.players[id]).emit('invalid play', 'business');
     return playerList;
   } else if(result == 8){
     play_log_tuple (id, 8, -1, -1, -1);
@@ -405,19 +414,20 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     if(guessedCard != null){
       var result = logic.guessed_card(game, id, targetPlayer, guessedCard);
       game = result.game;
+      var guessedCard = parseInt(guessedCard);
       if(result.output == -8){
-        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, true);
+        play.to(game.players[id]).emit('built result', id, targetPlayer, cardInfo.cardInfo(guessedCard), true);
         emitMessage1 = ['built result', id, targetPlayer, guessedCard, true];
-        play.to(game.players[targetPlayer]).emit('built result', id, targetPlayer, guessedCard, true);
+        play.to(game.players[targetPlayer]).emit('built result', id, targetPlayer, cardInfo.cardInfo(guessedCard), true);
         emitMessage2 = ['built result', id, targetPlayer, guessedCard, true];
         
         if(eliminate_player(targetPlayer) == false) {
           return {message1: emitMessage1, message2: emitMessage2};
         } 
       } else {
-        play.to(game.players[id]).emit('built result', id, targetPlayer, guessedCard, false);
+        play.to(game.players[id]).emit('built result', id, targetPlayer, cardInfo.cardInfo(guessedCard), false);
         emitMessage1 = ['built result', id, targetPlayer, guessedCard, false];
-        play.to(game.players[targetPlayer]).emit('built result', id ,targetPlayer, guessedCard, false);
+        play.to(game.players[targetPlayer]).emit('built result', id ,targetPlayer, cardInfo.cardInfo(guessedCard), false);
         emitMessage2 = ['built result', id ,targetPlayer, guessedCard, false];
       }
       play_log_tuple (id, playedCard, guessedCard, targetPlayer, result.output);
@@ -433,7 +443,7 @@ function turnPhaseTwo(targetPlayer, playedCard, guessedCard){
     game = output.game;
     if(result == 0){
       //if targeting a player with medicine immunity
-      play.to(game.players[id]).emit('invalid play');
+      play.to(game.players[id]).emit('invalid play', 'immunity');
       emitMessage1 = ['invalid play'];
       return {message1: emitMessage1, message2: emitMessage2};
     } else if(playedCard == 2){
@@ -564,8 +574,24 @@ function report_end_round(){
     }
     game.ready[i] = false;
   }
+
+  winner_str = "<strong>The round has finished!";
+  if(winners.length > 1){
+    winner_str += " The winners are:";
+    for(var j=0; j<winners.length; j++){
+      winner_str += " Player ";
+      winner_str += winners[j];
+      if(winners[j] != winners[winners.length-1]){
+        winner_str +=  ", ";
+      }
+    }
+  } else {
+    winner_str += " The winner is Player " + winners;
+  }
+  winner_str += "</strong>";
+  game.history.push(winner_str);
   console.log("PLAY LOG: The round has finished. The winners are: " + winners);
-  game.history.push("The round has finished! The winners are: " + winners);
+ 
   game.lastWinners = winners;
   if(gameOver){
     finish_game(gWinners);
@@ -574,12 +600,29 @@ function report_end_round(){
   }
   
   
-  play.to('players').emit('round finished', winners);
+  play.to('players').emit('round finished', winners, "player");
+  play.to('nonplayers').emit('round finished', winners, "nonplayer");
 }
 
 function finish_game(winners){
-  
-  play.to('players').emit('game finished', winners);
+  winner_str = "<strong>The game has ended!";
+  if(winners.length > 1){
+    winner_str += " The winners are:";
+    for(var j=0; j<winners.length; j++){
+      winner_str += " Player ";
+      winner_str += winners[j];
+      if(winners[j] != winners[winners.length-1]){
+        winner_str +=  ", ";
+      }
+    }
+  } else {
+    winner_str += " The winner is Player " + winners;
+  }
+  winner_str += "</strong>";
+  game.history.push(winner_str);
+  play.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  play.to('players').emit('game finished', winners, "player");
+  play.to('nonplayers').emit('game finished', winners, "nonplayer");
   reset();
   
 }
@@ -633,9 +676,9 @@ function getPlayerBySId(sid){
 function removePlayerBySId(data){
   var gameIndex = getPlayerBySId(data);
   var userIndex = getUserBySId(data);
-  usercount--;
+  
   if(gameIndex > -1){
-    
+    usercount--;
     //hand of -1 indicates the player has left
     if(game.status == 'running'){
       var card = game.playerHands[gameIndex];
@@ -658,8 +701,7 @@ function removePlayerBySId(data){
           nextTurn();
         }
         game.history.push(message);
-        play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-        spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+        play.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
       }
     } else if(game.status == 'waiting'){
       game.players[userIndex] = -1;
@@ -686,7 +728,7 @@ function removePlayerBySId(data){
 }
 
 function addNewUser(UId, socket){
-  usercount++;
+  
   var SId = socket.id;
   var entry = {uniqueID: UId, socketID: SId, disconnected: false};
   users.push(entry);
@@ -695,18 +737,20 @@ function addNewUser(UId, socket){
   //otherwise they're added to the non player room
   console.log("A user has joined.");
   if(game.players.length < 4){
+    usercount++;
     console.log("Player added to players group.");
     game.players.push(socket.id);
     socket.join('players');
     if(game.players.length == 4){
       startGame();
-      
     }
     play.to('players').emit('player update', 4 - users.length);
   } else {
+    socket.join('nonplayers');
     play.to(SId).emit('game full');
+    socket.join('nonplayers');
   }
-   
+  
   //update the page to show how many users are connected
   play.emit('update', users.length);
 }
