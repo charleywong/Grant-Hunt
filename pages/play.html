@@ -877,25 +877,37 @@
                 console.log("Game over!");
                 
                 //make sure they have no cards in their hand
-                removeCardData("card1");
-                removeCardData("card2");
-
+                if(document.getElementById("card1")){
+                    removeCardData("card1");
+                }
+                if(document.getElementById("card2")){
+                    removeCardData("card2");
+                }
+                
                 if(document.getElementById("out")){
                     var outmsg = document.getElementById("out");
                     outmsg.parentNode.removeChild(outmsg);
                 }
 
                 if(document.getElementById("playbutton")){
-                    var playbtn = document.getElementById("out");
+                    var playbtn = document.getElementById("playbutton");
                     playbtn.parentNode.removeChild(playbtn);
                 }
             
-                document.getElementById("turnstatus").innerHTML = "";
+                if(document.getElementById("turnstatus")){
+                    document.getElementById("turnstatus").innerHTML = "";
+                }
+                
                 //display you're out message!
                 if(status == "player"){
                     var row = document.getElementById("cards");
                 } else {
                     var row = document.getElementById("history");
+                    //need to remove the history
+                    var history = document.getElementById("history-content");
+                    history.parentNode.removeChild(history);
+                    var historyHead = document.getElementById("history-head");
+                    historyHead.parentNode.removeChild(historyHead);
                 }
                 
                 var message = document.createElement("h1");
@@ -921,21 +933,27 @@
                 }
                
                 message.innerHTML = text;
+                message.setAttribute("id", "out");
                 message.style.marginLeft = "auto";
                 message.style.marginRight = "auto";
-                message.setAttribute("id", "out");
                 row.appendChild(message);
                 
-                document.getElementById("playbutton").style.visibility = "hidden";
                 //create a button to go back to the play page
                 var playAgainButton = document.createElement("a")
-                playAgainButton.innerHTML = "Play again"
                 playAgainButton.setAttribute("class", "button")
                 playAgainButton.setAttribute("id","playPage")
                 playAgainButton.setAttribute("onclick","window.location.reload()")
                 playAgainButton.style.marginLeft = "auto";
                 playAgainButton.style.marginRight = "auto";
-                document.getElementById("turnend").appendChild(playAgainButton)
+                if(status == "player"){
+                    playAgainButton.innerHTML = "Play again";
+                    document.getElementById("turnend").appendChild(playAgainButton)
+                } else {
+                    document.getElementById('out').style.paddingBottom = "3%";
+                    playAgainButton.innerHTML = "Join next game";
+                    row.appendChild(playAgainButton)
+                }
+                
                 gameOver = true;
             });
         </script>
@@ -962,10 +980,11 @@
 
             <div id='gameInAction' style="visibility: hidden; height:100%;">
                 <div class="game gameInAction-history" id="history" >
-                    <h6>HISTORY</h6>
-                    <hr>
-                    <div id="history-content" class="history-content">
+                    <div id="history-head">
+                        <h6>HISTORY</h6>
+                        <hr>
                     </div>
+                    <div id="history-content" class="history-content"></div>
                 </div>
                 <div class="game-sidebar" id="game-sidebar">
                     <div id="player">
