@@ -694,7 +694,7 @@ function addNewUser(UId, socket){
   //if there's less than 4 players, they're added to the player room
   //otherwise they're added to the non player room
   console.log("A user has joined.");
-  if(game.players.length <= 4){
+  if(game.players.length < 4){
     console.log("Player added to players group.");
     game.players.push(socket.id);
     socket.join('players');
