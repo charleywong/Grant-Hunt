@@ -38,28 +38,45 @@
             });
             
             socket.on('player update', function(data){
-                // if(data > 0) {
-                document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players";
-                    // alert(data)
-                document.getElementById("share-link").style.visibility = "visible";
-                // } 
-                //show ready up button
-                //make it same width as share link
-                shareWidth = document.getElementById("share-link").offsetWidth
-                document.getElementById("start-round").style.visibility = "visible"
-                document.getElementById("start-round").style.width = shareWidth + 'px !important'
+                console.log(data);
+                if(data <= 0) {
+                    //show ready up button
+                    //make it same width as share link
+                    document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for 0 more players";
+                    shareWidth = document.getElementById("share-link").offsetWidth;
+                    document.getElementById("start-round").style.display = "inline";
+                    document.getElementById("start-round").style.width = shareWidth + 'px !important';
+                    document.getElementById("share-link").style.display = "none";
+                } else {
+                    document.getElementById("waitingstatus").innerHTML = "You've connected to a game! Waiting for " + data + " more players";
+                    document.getElementById("share-link").style.display = "inline";
+                    document.getElementById("start-round").style.display = "none";
+                }
 
             });
             
-            socket.on('nonplayer update', function(data){
-                if(document.getElementById("waitingstatus")){
-                    document.getElementById("waitingstatus").innerHTML = "The current game is full. There are currently " + data + " players waiting.";
-                }
+            socket.on('game full', function(){
+                console.log('game full!')
+                document.getElementById("waitingstatus").innerHTML = "The current game is full. You are currently spectating";
+                document.getElementById("gameWait").setAttribute("class", "game waiting");
+                // hide share link button
+                document.getElementById("share-link").style.visibility = "hidden";
+                //hide start round
+                document.getElementById("start-round").style.visibility = "hidden";
+                document.getElementById("gameInAction").style.visibility = "visible";
+                document.querySelector("header > div[class='container text-center']").style.marginTop = "-10%";
+                // remove status
+                var parentOfStatus = document.getElementById("status").parentNode;
+                parentOfStatus.removeChild(document.getElementById("status"));
+                //remove gamewindow
+                var parentOfWait = document.getElementById("gamewindow").parentNode;
+                parentOfWait.removeChild(document.getElementById("gamewindow"));
             });
 
             socket.on('start game', function(data){
                 //forcibly close modal
                 $('#gameModal').modal('hide');
+               
                 //we need to handle when this is the first round or the next round separately
                 if (document.getElementById("out")) {
                     if (!document.getElementById("playbutton")) {
@@ -70,10 +87,8 @@
                         a.setAttribute("onclick","playCard()");
                         a.style.visibility = "hidden";
                         a.innerHTML = "PlayCard";
-
                         // append button to somethin
                         document.getElementById("turnend").appendChild(a)
-
                     }
                     // out is the id given to h1 that tells players when they're out of the round
                     //this part is for when it's next round
@@ -87,11 +102,9 @@
                     // hide next round button
                     var nextR = document.getElementById("nextRound");
                     nextR.parentNode.removeChild(nextR);
-
                     //reappend cards
                     appendNewCard(data,"card1")
                     document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
-
                 } else {
                     if (!document.getElementById("playbutton")) {
                         //re-add in play button
@@ -114,10 +127,11 @@
                     //remove gameWait; copy button and waitingstatus
                     var parentOfWait = document.getElementById("gameWait").parentNode;
                     parentOfWait.removeChild(document.getElementById("gameWait"));
-
+                     //remove gameInAction
+                    var parentOfWait = document.getElementById("gameInAction").parentNode;
+                    parentOfWait.removeChild(document.getElementById("gameInAction"));
                     // we need to show every player what their current hand is
                     appendNewCard(data,"card1")
-
                     document.getElementById("gamewindow").style.visibility = "visible";
                     document.getElementById("turnstatus").innerHTML = "It's not your turn yet.";
                 }
@@ -128,7 +142,6 @@
                 playersInRound = remainingPlayersInRound;
                 playerId = pId;
                 if(!document.getElementById("players")){
-
                     //add players count
                     var table = document.getElementsByClassName("player-table")[0];
                     var tbody = document.createElement("tbody");
@@ -316,7 +329,7 @@
                 // playCard.style.visibility = "hidden";
                 var nextRoundButton = document.createElement("a")
                 nextRoundButton.innerHTML = "Next Round"
-                nextRoundButton.setAttribute("class", "button")
+                nextRoundButton.setAttribute("class", "button-full")
                 nextRoundButton.setAttribute("id","nextRound")
                 nextRoundButton.setAttribute("onclick","readyUp()")
                 document.getElementById("turnend").appendChild(nextRoundButton)
@@ -609,6 +622,7 @@
 
             function submitModalButtonSwitch(playedCard){
                 var btn =  document.getElementById('modal-submit');
+                btn.style.display = "block";
                 console.log("submit :" + typeof(playedCard))
                 switch(playedCard){
                     case 1: case 2: case 3: case 4: case 5: case 6: case 7:
@@ -866,17 +880,41 @@
         <div class="container text-center">   
             <div id='gameWait' class="waiting">
                 <p id="waitingstatus" class="loading status"></p>
-                <a class="button" id="share-link" onclick="copyToClipboard()" style="visibility: hidden;">Click to copy shareable link!</a>
-                <a class="button" id="start-round" onclick="readyUp()" style="visibility: hidden;">Click to ready up!</a>
+                <a class="button" id="share-link" onclick="copyToClipboard()">Click to copy shareable link!</a>
+                <a class="button-full" id="start-round" onclick="readyUp()">Click to ready up!</a>
             </div>
+
+            <div id='gameInAction' style="visibility: hidden;">
+                <div class="game history" id="history" >
+                    <h6>HISTORY</h6>
+                    <hr>
+                    <div id="history-content" class="history-content">
+                    </div>
+                </div>
+                <div class="game-sidebar" id="game-sidebar">
+                    <div id="player">
+                        <h6>Players</h6>
+                        <hr>
+                        <table class="player-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Player</th>
+                                    <th scope="col">Rounds Won</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <div id="gamewindow" action="" style="visibility: hidden;" >
                 <div class="game-sidebar" id="game-sidebar">
                     <div class="history" id="history" >
                         <h6>HISTORY</h6>
                         <hr>
                         <div id="history-content" class="history-content">
-                            <p>Loreum ipsum</p>
-                            <hr>
                         </div>
                     </div>
                     <div id="player">
@@ -903,7 +941,7 @@
                     </div>
                     <div class="row">
                         <div class="col-lg-12" id="turnend">
-                            <a class="button" id="playbutton" onclick="playCard()" style="visibility: hidden;">Play Card</a>
+                            <a class="button" id="playbutton" onclick="playCard()">Play Card</a>
                         </div>
                         
                     </div>

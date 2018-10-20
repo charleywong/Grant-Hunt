@@ -154,17 +154,21 @@ http.listen(3000, function(){
 
 function  readyCheck(){
   var readyCount = 0;
+  var playercount = 0;
   if(game.status == "waiting"){
-    for(var j = 0; j< game.players.length; j++){
-      if(game.players[j] != -1 && (game.ready[j])){
-        readyCount++;
+    for(var j = 0; j < game.players.length; j++){
+      if(game.players[j] != -1){
+        playercount++;
+        if(game.ready[j]){
+          readyCount++;
+        }
       }
     }
-  }
-  if(readyCount == usercount){
-    startRound();
-  } else {
-    play.emit('ready count', usercount - readyCount);
+    if(readyCount == playercount){
+      startRound();
+    } else {
+      play.emit('ready count', playercount - readyCount);
+    }
   }
 }
 
@@ -318,6 +322,7 @@ function playersInGame(){
   }
   play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
   spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  spectate.emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, null);
 }
 
 // Prepare for Phase One of a turn
@@ -571,8 +576,22 @@ function report_end_round(){
     }
     game.ready[i] = false;
   }
+  winner_str = "The round has finished!";
+  if(winners.length > 1){
+    winner_str += "The winners are:";
+    for(var j=0; j<winners.length; j++){
+      winner_str += " Player ";
+      winner_str += winners[j];
+      if(winners[j] != winners[winners.length-1]){
+        winner_str +=  ", ";
+      }
+    }
+  } else {
+    winner_str += "The winner is: " + winner;
+  }
+  game.history.push(winner_str);
   console.log("PLAY LOG: The round has finished. The winners are: " + winners);
-  game.history.push("The round has finished! The winners are: " + winners);
+ 
   game.lastWinners = winners;
   if(gameOver){
     finish_game(gWinners);
