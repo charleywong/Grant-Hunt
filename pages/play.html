@@ -278,76 +278,92 @@
 
             });
 
-            socket.on('round finished', function(winners) {
+            socket.on('round finished', function(winners, status) {
                 if(gameOver == false){
                     console.log("round FINISHED");
                     winnersSoFar = winners;
                     // remove cards
                     // show who has won the game
                     //
-                    removeCardData("card1");
-                    removeCardData("card2");
+                    if(document.getElementById("card1") || document.getElementById("card2")){
+                        removeCardData("card1");
+                        removeCardData("card2");
+                    }
+                    
+                    if(document.getElementById("playbutton")){
+                        document.getElementById("playbutton").style.visibility = "hidden";
+                    }
+                    
+                    if( document.getElementById("turnstatus")){
+                        document.getElementById("turnstatus").innerHTML = "";
+                    }
 
-                    document.getElementById("playbutton").style.visibility = "hidden";
-                    document.getElementById("turnstatus").innerHTML = "";
+                    
                     //display you're out message!
                     if(document.getElementById("out")){
                         var outmsg = document.getElementById("out");
                         outmsg.parentNode.removeChild(outmsg);
                     }
-                
-                    var row = document.getElementById("cards");
-                    var message = document.createElement("h1");
-                    if (winners.length == 1) {
-                        // only 1 winner
-                        if (winners[0] == playerId) {
-                            message.innerHTML = "You are the winner of this round"
-                        } else {
-                            message.innerHTML = "Player " + winners[0] + " is the winner of this round"    
-                        }
-                        // we also need to increment the winner's rounds won
-                        // this is under assumption that there is only 1 winner
-                        var query = "tbody[id='players'] > tr:nth-child(" + String(parseInt(winners[0])+1) + ") > td:nth-child(2)"
-                        var winnerInTable = document.querySelector(query);
-                        winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
-                        
-                        
-                    } else {
-                        message.innerHTML = "Players ";
-                        for (var i = 0; i < winners.length; i ++) {
-                            if (i == winners.length-1) {
-                                message.innerHTML = message.innerHTML + ' and ' + winners[i];
+
+                    if(status == "player"){
+                        var row = document.getElementById("cards");
+                        var message = document.createElement("h1");
+                        if (winners.length == 1) {
+                            // only 1 winner
+                            if (winners[0] == playerId) {
+                                message.innerHTML = "You are the winner of this round"
                             } else {
-                                message.innerHTML = message.innerHTML + ' ' + winners[i] + ', ';
+                                message.innerHTML = "Player " + winners[0] + " is the winner of this round"    
                             }
                             // we also need to increment the winner's rounds won
-                            var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(" + winners[i]+1 + ") > td:nth-child(2)");
-                            winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
+                            // this is under assumption that there is only 1 winner
+                            var query = "tbody[id='players'] > tr:nth-child(" + String(parseInt(winners[0])+1) + ") > td:nth-child(2)"
+                            var winnerInTable = document.querySelector(query);
+                            winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1  
+                        } else {
+                            message.innerHTML = "Players ";
+                            for (var i = 0; i < winners.length; i ++) {
+                                if (i == winners.length-1) {
+                                    message.innerHTML = message.innerHTML + ' and ' + winners[i];
+                                } else {
+                                    message.innerHTML = message.innerHTML + ' ' + winners[i] + ', ';
+                                }
+                                // we also need to increment the winner's rounds won
+                                var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(" + winners[i]+1 + ") > td:nth-child(2)");
+                                winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
+                            }
+                            message.innerHTML += " are the winners of this round!";
                         }
-                        message.innerHTML += " are the winners of this round!";
+                        message.style.marginLeft = "auto";
+                        message.style.marginRight = "auto";
+                        message.setAttribute("id", "out");
+                        row.appendChild(message);
 
+                        //add a button 'next round' that all players must click in order to move onto the next round
+                        //first, remove play card button
+                        var playCard = document.getElementById("playbutton");
+                        playCard.parentNode.removeChild(playCard);
+                        var nextRoundButton = document.createElement("a")
+                        nextRoundButton.innerHTML = "Next Round"
+                        nextRoundButton.setAttribute("class", "button-full")
+                        nextRoundButton.setAttribute("id","nextRound")
+                        nextRoundButton.setAttribute("onclick","readyUp()")
+                        document.getElementById("turnend").appendChild(nextRoundButton)
+                        //let all players know who has pressed that button
+                    } else {
+                        if(winners.length == 1){
+                            var query = "tbody[id='players'] > tr:nth-child(" + String(parseInt(winners[0])+1) + ") > td:nth-child(2)"
+                            var winnerInTable = document.querySelector(query);
+                            winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1  
+                        } else {
+                            for (var i = 0; i < winners.length; i ++) {
+                                // we also need to increment the winner's rounds won
+                                var winnerInTable = document.querySelector("tbody[id='players'] > tr:nth-child(" + winners[i]+1 + ") > td:nth-child(2)");
+                                winnerInTable.textContent = parseInt(winnerInTable.textContent) + 1
+                            }
+                        }
                     }
-
                     
-                    message.style.marginLeft = "auto";
-                    message.style.marginRight = "auto";
-                    message.setAttribute("id", "out");
-                    row.appendChild(message);
-
-
-
-                    //add a button 'next round' that all players must click in order to move onto the next round
-                    //first, remove play card button
-                    var playCard = document.getElementById("playbutton");
-                    playCard.parentNode.removeChild(playCard);
-                    // playCard.style.visibility = "hidden";
-                    var nextRoundButton = document.createElement("a")
-                    nextRoundButton.innerHTML = "Next Round"
-                    nextRoundButton.setAttribute("class", "button-full")
-                    nextRoundButton.setAttribute("id","nextRound")
-                    nextRoundButton.setAttribute("onclick","readyUp()")
-                    document.getElementById("turnend").appendChild(nextRoundButton)
-                    //let all players know who has pressed that button
                 }
             });
 

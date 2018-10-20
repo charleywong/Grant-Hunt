@@ -600,7 +600,8 @@ function report_end_round(){
   }
   
   
-  play.to('players').emit('round finished', winners);
+  play.to('players').emit('round finished', winners, "player");
+  play.to('nonplayers').emit('round finished', winners, "nonplayer");
 }
 
 function finish_game(winners){
