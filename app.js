@@ -321,8 +321,8 @@ function playersInGame(){
     play.to(game.players[p]).emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, pId);
   }
   play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-  spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-  spectate.emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, null);
+  play.to('nonplayers').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  play.to('nonplayers').emit('remaining players', remainingPlayersInGame, remainingPlayersInRound, null);
 }
 
 // Prepare for Phase One of a turn
@@ -622,7 +622,7 @@ function finish_game(winners){
   winner_str += "</strong>";
   game.history.push(winner_str);
   play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-  spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+  play.to('nonplayers').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
   play.to('players').emit('game finished', winners);
   reset();
   
@@ -703,7 +703,7 @@ function removePlayerBySId(data){
         }
         game.history.push(message);
         play.to('players').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
-        spectate.emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
+        play.to('nonplayers').emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
       }
     } else if(game.status == 'waiting'){
       game.players[userIndex] = -1;
@@ -749,8 +749,9 @@ function addNewUser(UId, socket){
     play.to('players').emit('player update', 4 - users.length);
   } else {
     play.to(SId).emit('game full');
+    socket.join('nonplayers');
   }
-   
+  
   //update the page to show how many users are connected
   play.emit('update', users.length);
 }
