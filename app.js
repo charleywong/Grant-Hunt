@@ -244,8 +244,8 @@ function shuffle(deck){
 // Returns a shuffled Grant Hunt Deck
 function newDeck(){
   //preset deck for testing
-  return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3,1, 5, 8, 8, 8,8];
-  //return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
+  //return [8, 7, 6, 5, 5, 4, 4, 2, 2, 1, 3, 3,1, 5, 8, 8, 8,8];
+  return shuffle([1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8]);
 }
 
 

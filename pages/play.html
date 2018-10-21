@@ -192,8 +192,8 @@
             socket.on('game update', function(currentPlayer, display_deck, history, immune){
                 console.log("Game update");
                 var historyContent = document.getElementById('history-content');
+                immunePlayers = immune;
                 removeCardData('history-content');
-                console.log(history)
                 for(var i=history.length; i>0; i--){
                     var message = document.createElement("p");
                     message.style.width = '100%';
@@ -273,7 +273,7 @@
                 // notify player that someone has targeted them and their existing card will be discarded
                 $('#gameModal').modal('show');
                 submitModalButtonSwitch(null);
-                document.getElementById('modal-title').innerHTML = "Player " + playedPlayer + " has played Medicine and targeted you!";
+                document.getElementById('modal-title').innerHTML = "Player " + playedPlayer + " has played Science and targeted you!";
                 document.getElementById('information').innerHTML = "As a result, your existing card has been discarded and your new card is: " + newCard.name;
 
             });
@@ -753,7 +753,7 @@
                     }
                     
                     // check if the player is immune
-                    if (immunePlayers.includes(playersInRound[p])) {
+                    if (immunePlayers[(playersInRound[p])]) {
                         child.textContent = child.textContent + " (Medicine)";
                         child.value = child.value + " (Medicine)";
                         // also need to disable this option
