@@ -95,6 +95,9 @@ play.on('connection', function(socket){
         }
         users[index].socketID = socket.id;
         play.to(socket.id).emit('update', users.length);
+        if(game.currentPlayer == gameIndex){
+          play.to(socket.id).emit('your turn', gameIndex, cardInfo.cardInfo(game.playerHands[gameIndex]), cardInfo.cardInfo(drawnCard);
+        }
       } else {
         addNewUser(data, socket);
       }
@@ -748,7 +751,7 @@ function addNewUser(UId, socket){
   } else {
     socket.join('nonplayers');
     play.to(SId).emit('game full');
-    socket.join('nonplayers');
+    play.to(SId).emit('game update', game.currentPlayer, game.display_deck, game.history, game.immune);
   }
   
   //update the page to show how many users are connected
